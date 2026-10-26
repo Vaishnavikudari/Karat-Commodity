@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Large local executables and scratch
+cloudflared.exe
+*.exe
+
+# System / IDE
+.agents/
+.cursor/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

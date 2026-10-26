@@ -1,0 +1,100 @@
+/* ==========================================================================
+   KARAT design tokens — single source of truth
+   Private bank × jeweller’s vault at night.
+   Gold is the hero accent. Crimson is scarce (losses, alerts, ember only).
+   ========================================================================== */
+
+:root {
+  /* Backgrounds — warm blacks with a faint red undertone */
+  --bg-0: #080507;
+  --bg-1: #0F0A0C;
+  --bg-2: #170E11;
+  --bg-3: #20141A;
+
+  /* Gold ramp */
+  --gold-50: #FBF3D5;
+  --gold-200: #EBD58A;
+  --gold-400: #DDBB55;
+  --gold-500: #D4AF37;
+  --gold-600: #B8902A;
+  --gold-800: #6B5017;
+
+  /* Crimson ramp */
+  --red-300: #F0707A;
+  --red-500: #C8323C;
+  --red-700: #8E1F2A;
+  --red-900: #3B0D14;
+
+  /* Text — WCAG AA on --bg-0 / --bg-2 for body and headlines */
+  --text-1: #F4ECDD;
+  --text-2: #B9AE9B;
+  --text-3: #7E7566;
+
+  /* Lines */
+  --line-1: rgba(212, 175, 55, 0.16);
+  --line-2: rgba(212, 175, 55, 0.34);
+
+  /* Typography */
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --text-hero: clamp(3.5rem, 7vw, 6.5rem);
+  --text-section: clamp(2rem, 4vw, 3.25rem);
+  --text-body: 1.05rem;
+  --text-caption: 0.925rem;
+  --text-micro: 0.8125rem;
+
+  --leading-display: 1.2;
+  --leading-body: 1.65;
+  --tracking-display: -0.01em;
+  --tracking-micro: 0.05em;
+
+  /* Spacing — 8px base */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --section-y: clamp(96px, 14vw, 200px);
+  --content-max: 1200px;
+
+  /* Radii */
+  --radius-hair: 4px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+
+  /* Motion */
+  --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-reveal: 0.8s;
+  --duration-hover: 0.25s;
+
+  /* Shadows / glows */
+  --glow-gold: 0 0 48px rgba(212, 175, 55, 0.22);
+  --glow-gold-soft: 0 0 80px rgba(212, 175, 55, 0.12);
+  --glow-ember: 0 0 64px rgba(200, 50, 60, 0.16);
+  --shadow-card: 0 18px 50px rgba(8, 5, 7, 0.45);
+  --inner-highlight: inset 0 1px 0 rgba(251, 243, 213, 0.08);
+
+  /* Gradients */
+  --gold-fill: linear-gradient(135deg, var(--gold-400) 0%, var(--gold-600) 100%);
+  --gold-border: linear-gradient(135deg, rgba(221, 187, 85, 0.55), rgba(212, 175, 55, 0.05) 55%, transparent);
+  --gold-text: linear-gradient(135deg, var(--gold-50) 0%, var(--gold-200) 35%, var(--gold-500) 70%, var(--gold-600) 100%);
+
+  /* Grain */
+  --grain-opacity: 0.028;
+
+  /* Compat aliases used by existing CSS / JS-era classes */
+  --bg-primary: var(--bg-0);
+  --bg-secondary: var(--bg-2);
+  --bg-tertiary: var(--bg-3);
+  --border-color: var(--line-1);
+  --border-light: var(--line-2);
+  --text-main: var(--text-1);
+  --text-muted: var(--text-2);
+  --gold-accent: var(--gold-500);
+  --gold-glow: rgba(212, 175, 55, 0.22);
+  --red-accent: var(--red-300);
+  --amber-accent: var(--gold-400);
+}

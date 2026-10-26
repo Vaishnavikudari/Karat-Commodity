@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karat — See beyond the gold price</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="design-tokens.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-0': 'var(--bg-0)',
+            'bg-1': 'var(--bg-1)',
+            'bg-2': 'var(--bg-2)',
+            'bg-3': 'var(--bg-3)',
+            gold: {
+              50: 'var(--gold-50)',
+              200: 'var(--gold-200)',
+              400: 'var(--gold-400)',
+              500: 'var(--gold-500)',
+              600: 'var(--gold-600)',
+              800: 'var(--gold-800)'
+            },
+            crimson: {
+              300: 'var(--red-300)',
+              500: 'var(--red-500)',
+              700: 'var(--red-700)',
+              900: 'var(--red-900)'
+            },
+            ink: {
+              1: 'var(--text-1)',
+              2: 'var(--text-2)',
+              3: 'var(--text-3)'
+            },
+            line: {
+              1: 'var(--line-1)',
+              2: 'var(--line-2)'
+            }
+          },
+          fontFamily: {
+            display: ['Cormorant Garamond', 'Georgia', 'Times New Roman', 'serif'],
+            sans: ['Manrope', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+          },
+          borderRadius: {
+            hair: '4px',
+            card: '16px',
+            pill: '999px'
+          },
+          maxWidth: {
+            content: '1200px'
+          },
+          transitionTimingFunction: {
+            lux: 'cubic-bezier(0.22, 1, 0.36, 1)'
+          },
+          boxShadow: {
+            gold: 'var(--glow-gold)',
+            ember: 'var(--glow-ember)'
+          },
+          spacing: {
+            section: 'var(--section-y)',
+            content: 'var(--content-max)'
+          },
+          fontSize: {
+            xs: ['0.84rem', { lineHeight: '1.35rem' }],
+            sm: ['0.9375rem', { lineHeight: '1.45rem' }],
+            base: ['1.05rem', { lineHeight: '1.6rem' }],
+            lg: ['1.2rem', { lineHeight: '1.75rem' }],
+            xl: ['1.375rem', { lineHeight: '1.9rem' }],
+            '2xl': ['1.65rem', { lineHeight: '2.15rem' }],
+            hero: 'var(--text-hero)',
+            section: 'var(--text-section)',
+            caption: 'var(--text-caption)',
+            micro: 'var(--text-micro)'
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="bg-bg-0 text-ink-1 font-sans overflow-x-hidden">
+  <div class="page-vignette" aria-hidden="true"></div>
+  <div class="page-grain" aria-hidden="true"></div>
+
+  <!-- ==========================================================================
+       SECTION 1: 3D LUXURY HERO & LANDING SHOWCASE
+       ========================================================================== -->
+  <div id="hero-section" class="spotlight-area relative w-full h-screen overflow-hidden flex flex-col items-center justify-center font-outfit select-none">
+    
+    <!-- 3D Tubes Interactive WebGL Canvas -->
+    <canvas id="tubes-canvas" class="absolute inset-0 w-full h-full block z-0" style="touch-action: none; cursor: crosshair;"></canvas>
+
+    <!-- Spotlight Cursor Gradient (Prompt vibrant neon/violet palette) -->
+    <div class="spotlight-gradient" aria-hidden="true"></div>
+
+    <!-- Ambient Vignette Overlays -->
+    <div class="hero-veil absolute inset-0 pointer-events-none z-[1]"></div>
+    <div class="hero-veil-edge absolute inset-0 pointer-events-none z-[1]"></div>
+
+    <!-- Main Center Content -->
+    <main class="relative z-10 w-full flex flex-col items-center justify-center px-4 text-center pointer-events-none">
+      
+      <!-- KARAT Logo & Big Letters in Middle -->
+      <div class="relative pointer-events-auto flex flex-col items-center">
+        <!-- Logo Icon -->
+        <div class="gold-gem w-14 h-14 mb-4 rounded-2xl flex items-center justify-center animate-blur-in">
+          <iconify-icon icon="lucide:gem" class="text-3xl" style="color: var(--bg-0)"></iconify-icon>
+        </div>
+        
+        <!-- Big Letters KARAT -->
+        <div class="relative">
+          <div class="absolute -inset-8 rounded-full -z-10 pointer-events-none" style="background: rgba(255,255,255,0.06); filter: blur(48px);"></div>
+          <h1 class="font-karat text-7xl sm:text-8xl md:text-9xl lg:text-[11rem] font-semibold tracking-tight leading-none select-none animate-blur-in animate-blur-in-delay-1" style="color: #FFFFFF; text-shadow: 0 0 40px rgba(255,255,255,0.15);">
+            KARAT
+          </h1>
+        </div>
+      </div>
+
+      <!-- Tagline -->
+      <p class="pointer-events-auto mt-6 text-lg sm:text-2xl md:text-3xl font-medium tracking-[0.18em] font-outfit animate-blur-in animate-blur-in-delay-2" style="color: #FFFFFF;">
+        See beyond the gold price.
+      </p>
+
+      <!-- Subtitle -->
+      <p class="pointer-events-auto mt-3 sm:mt-4 text-sm sm:text-base md:text-lg max-w-2xl font-normal tracking-wide leading-relaxed animate-blur-in animate-blur-in-delay-3" style="color: rgba(255,255,255,0.7);">
+        Expiry-aware relative-value intelligence for MCX Gold Futures.
+      </p>
+
+      <!-- Primary Action: Launches Spotlight Mask Reveal -->
+      <div class="pointer-events-auto mt-8 sm:mt-10 animate-blur-in animate-blur-in-delay-4">
+        <a id="btn-experience-karat" href="#dashboard" class="btn-gold group relative inline-flex items-center gap-3 px-8 sm:px-10 py-4 rounded-full font-semibold text-base sm:text-lg cursor-pointer">
+          <span>Experience KARAT</span>
+          <iconify-icon icon="lucide:arrow-right" class="text-xl group-hover:translate-x-1.5 transition-transform duration-300"></iconify-icon>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==========================================================================
+       SECTION 2: SPOTLIGHT REVEAL WRAPPER (KARAT INTELLIGENCE SUITE)
+       ========================================================================== -->
+  <div id="spotlight-wrapper" class="font-outfit select-text">
+    
+    <!-- ==========================================================================
+         LIVING WARM AURORA CANVAS (Superdesign Signature - Only after Experience KARAT)
+         ========================================================================== -->
+    <div class="aurora-canvas" aria-hidden="true">
+      <div class="aurora-blade aurora-blade-1"></div>
+      <div class="aurora-blade aurora-blade-2"></div>
+      <div class="aurora-blade aurora-blade-3"></div>
+      <div class="aurora-blade aurora-blade-4"></div>
+      <div class="aurora-blade aurora-blade-5"></div>
+      <div class="aurora-vignette"></div>
+      <div class="aurora-grain"></div>
+    </div>
+
+    <div class="surface-app min-h-screen flex flex-col relative z-10">
+      
+      <!-- Top Navigation & Header -->
+      <header class="surface-nav sticky top-0 z-30">
+        <!-- Scroll Progress Bar -->
+        <div class="nav-scroll-progress" id="nav-scroll-progress"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          
+          <!-- Logo & Brand -->
+          <div class="flex items-center gap-3">
+            <div class="gold-gem w-8 h-8 rounded-lg flex items-center justify-center text-sm">
+              <iconify-icon icon="lucide:gem" class="text-base" style="color: var(--bg-0)"></iconify-icon>
+            </div>
+            <div>
+              <span class="font-semibold text-lg tracking-wide text-ink-1 font-karat">KARAT</span>
+            </div>
+          </div>
+
+          <!-- Tab Navigation (Animated Floating Pill Bar) -->
+          <nav id="desktop-nav" class="hidden md:flex items-center gap-2.5 font-medium text-sm relative">
+            <!-- Gliding Active Indicator Pill -->
+            <div id="nav-pill-indicator" class="nav-pill-indicator absolute pointer-events-none" aria-hidden="true"></div>
+            
+            <button data-tab="overview" class="nav-tab-btn active relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Overview</button>
+            <button data-tab="spreads" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Spread Lab</button>
+            <button data-tab="backtest" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Backtest</button>
+            <button data-tab="calendar" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Calendar</button>
+            <button data-tab="methodology" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Data & Method</button>
+          </nav>
+
+          <!-- Status & Exit to 3D -->
+          <div class="flex items-center gap-3">
+            <div id="data-provenance-badge" class="surface-chip px-3 py-1.5 rounded-lg text-xs font-mono flex items-center">
+              <span class="inline-block w-2.5 h-2.5 rounded-full mr-2 bg-emerald-400"></span>
+              <span id="provenance-badge-text">MCX Gold Futures</span>
+            </div>
+
+            <button id="btn-back-hero" class="surface-chip p-2.5 rounded-lg hover:bg-bg-3 text-ink-3 hover:text-ink-1 transition-colors" title="Return to 3D Stage">
+              <iconify-icon icon="lucide:minimize-2" class="text-base"></iconify-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile Sub-nav (Animated Pill Bar) -->
+        <div class="md:hidden flex overflow-x-auto px-4 py-2.5 border-t border-line-1 gap-2.5 text-xs sm:text-sm relative bg-[#0D1015] scrollbar-none">
+          <button data-tab="overview" class="nav-tab-btn active whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Overview</button>
+          <button data-tab="spreads" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Spread Lab</button>
+          <button data-tab="backtest" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Backtest</button>
+          <button data-tab="calendar" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Calendar</button>
+          <button data-tab="methodology" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Data & Method</button>
+        </div>
+      </header>
+
+      <!-- Main Body Container -->
+      <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- ==================================================================
+             TAB 1: MARKET OVERVIEW (LIVE NORMALISATION SCALE)
+             ================================================================== -->
+        <section id="panel-overview" class="tab-content-panel space-y-6">
+          
+          <!-- Plain-English Opportunity Answer Card (Overview Page Only) -->
+          <div id="answer-card" class="gl-card p-5 sm:p-6 transition-all relative overflow-hidden feature-blur-in">
+            <!-- Dynamically populated by renderAnswerCard() -->
+          </div>
+
+          <!-- FEATURE 1: CONTRACT CHOOSER + POSITION MATCHER -->
+          <div id="contract-chooser-card" class="gl-card p-5 sm:p-6 space-y-5 relative overflow-hidden">
+            <!-- Header with Provenance Badge & Compliance -->
+            <div class="flex items-center justify-between flex-wrap gap-3 border-b border-line-1 pb-4">
+              <div>
+                <div class="flex items-center gap-3 flex-wrap">
+                  <h2 class="text-base sm:text-lg font-bold text-ink-1 tracking-wide flex items-center gap-2">
+                    <iconify-icon icon="lucide:scale" class="text-amber-400 text-xl"></iconify-icon>
+                    <span>Contract Chooser & Position Matcher</span>
+                  </h2>
+                  <span id="chooser-provenance-badge" class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    MCX data, 59 trading days, as of 2026-10-23
+                  </span>
+                </div>
+              </div>
+              <span class="text-xs font-mono text-amber-300/80 surface-chip px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <iconify-icon icon="lucide:shield-alert"></iconify-icon>
+                <span>Reference for investment</span>
+              </span>
+            </div>
+
+            <!-- Controls: Target Quantity & Expiry Month -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/20 p-4 rounded-xl border border-line-1">
+              <!-- Quantity in grams with quick buttons (10 / 100 / 1,000) -->
+              <div>
+                <label for="chooser-qty-input" class="block text-xs font-mono text-ink-2 mb-1.5 uppercase tracking-wider font-semibold">
+                  Target Quantity (Grams)
+                </label>
+                <div class="flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <input
+                      id="chooser-qty-input"
+                      type="number"
+                      min="1"
+                      max="100000"
+                      step="1"
+                      value="100"
+                      class="w-full bg-[#10141A] border border-line-1 rounded-lg px-3.5 py-2 font-mono text-ink-1 font-semibold text-base focus:border-amber-400 focus:outline-none"
+                      aria-label="Target gold quantity in grams"
+                    />
+                    <span class="absolute right-3.5 top-2.5 text-xs font-mono text-ink-3">grams</span>
+                  </div>
+                  <div class="flex items-center gap-1.5" role="group" aria-label="Quick quantity presets">
+                    <button type="button" class="chooser-quick-qty px-3 py-2 text-xs font-mono font-medium rounded-lg surface-chip hover:border-amber-400 text-ink-2 hover:text-ink-1 transition-colors" data-qty="10">10g</button>
+                    <button type="button" class="chooser-quick-qty px-3 py-2 text-xs font-mono font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40" data-qty="100">100g</button>
+                    <button type="button" class="chooser-quick-qty px-3 py-2 text-xs font-mono font-medium rounded-lg surface-chip hover:border-amber-400 text-ink-2 hover:text-ink-1 transition-colors" data-qty="1000">1,000g</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Expiry Month Selector (default: nearest expiry with > 3 days left) -->
+              <div>
+                <label for="chooser-expiry-select" class="block text-xs font-mono text-ink-2 mb-1.5 uppercase tracking-wider font-semibold">
+                  Contract Expiry Cycle
+                </label>
+                <div class="relative">
+                  <select
+                    id="chooser-expiry-select"
+                    class="w-full bg-[#10141A] border border-line-1 rounded-lg px-3.5 py-2.5 font-mono text-ink-1 text-sm focus:border-amber-400 focus:outline-none cursor-pointer appearance-none"
+                    aria-label="Select contract expiry cycle"
+                  >
+                    <!-- Populated dynamically -->
+                  </select>
+                  <iconify-icon icon="lucide:chevron-down" class="absolute right-3.5 top-3.5 text-ink-3 pointer-events-none"></iconify-icon>
+                </div>
+              </div>
+            </div>
+
+            <!-- Single-Contract Allocation Cards Grid -->
+            <div>
+              <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <span class="text-xs font-mono text-ink-2 uppercase tracking-wider font-semibold">
+                  Single-Contract Match & Dislocation
+                </span>
+                <span id="chooser-exact-match-status" class="text-xs font-mono text-ink-3">
+                  <!-- e.g. Exact match available on 3 contracts -->
+                </span>
+              </div>
+              <div id="chooser-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" aria-live="polite">
+                <!-- Populated dynamically by renderContractChooser() -->
+              </div>
+            </div>
+
+            <!-- Placeholder container for Step 3: Combinations & Best Fit -->
+            <div id="chooser-combinations-container" class="border-t border-line-1 pt-4 hidden">
+              <!-- Rendered in Step 3 -->
+            </div>
+          </div>
+
+          <!-- Reusable <ContractBars /> Component -->
+          <div id="contract-bars-mount"></div>
+          <div id="contract-bars-announcer" class="sr-only" aria-live="polite"></div>
+
+          <!-- 4-Contract Normalised Price Table -->
+          <div class="gl-card overflow-hidden">
+            <div class="p-5 border-b border-line-1 flex items-center justify-between flex-wrap gap-3">
+              <div class="flex items-center gap-3 flex-wrap">
+                <h2 class="text-base sm:text-lg font-bold text-ink-1 tracking-wide">
+                  MCX Gold Futures Unified Normalisation Scale
+                </h2>
+                <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  MCX data (2026-08-03 to 2026-10-23, 59 trading days)
+                </span>
+              </div>
+              <span class="text-xs font-mono text-ink-2 surface-chip px-3 py-1.5 rounded-lg">
+                Reference: GOLDTEN (999 Purity)
+              </span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="gl-table">
+                <thead>
+                  <tr>
+                    <th>Contract Size</th>
+                    <th>Purity</th>
+                    <th>Close (settlement proxy)</th>
+                    <th>Fair Price Per Gram</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-table-body">
+                  <tr>
+                    <td colspan="4" class="text-center py-8 text-ink-3 font-mono text-sm">
+                      Loading normalised contracts...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Live Signal Status Card -->
+          <div id="signals-summary-card">
+            <!-- Dynamically populated by loadSignalsOverview() -->
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             TAB 2: SPREAD LAB & TERM STRUCTURE
+             ================================================================== -->
+        <section id="panel-spreads" class="tab-content-panel hidden space-y-6">
+          
+          <!-- Pair Selector & Header -->
+          <div class="gl-card p-5 flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-3">
+              <label for="pair-selector" class="text-sm font-semibold text-ink-2 tracking-wide">
+                Select Contract Pair:
+              </label>
+              <select id="pair-selector" class="bg-bg-1 text-ink-1 border border-line-1 rounded-lg px-3.5 py-2 text-sm font-mono focus:border-gold-400 focus:outline-none">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <div class="text-xs sm:text-sm font-mono text-ink-2">
+              Mean Reversion Strategy: <span class="text-gold-400 font-semibold">Entry |z| ≥ 2.0σ | Exit Reversion to 0.0</span>
+            </div>
+          </div>
+
+          <!-- Statistical Metrics Grid -->
+          <div id="spread-stat-cards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Interactive Spread & Rolling Z-Score Chart -->
+          <div class="gl-card p-5">
+            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <h3 class="text-base font-semibold text-ink-1">
+                  20-Day Rolling Z-Score & Statistical Arbitrage Thresholds
+                </h3>
+                <span id="spread-chart-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  MCX data
+                </span>
+              </div>
+              <span class="text-xs sm:text-sm text-ink-2 font-mono">Strictly backward-looking (Zero Lookahead)</span>
+            </div>
+            <div id="spread-chart-container" class="w-full">
+              <!-- High-DPI SVG Chart -->
+            </div>
+            <!-- "Understanding This Graph" Summary Card -->
+            <div id="spread-understanding-mount" class="mt-5 pt-5 border-t border-line-1"></div>
+          </div>
+
+          <!-- Multi-Expiry Term Structure & Implied Carry -->
+          <div id="term-structure-container">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             TAB 3: WALK-FORWARD BACKTEST ENGINE
+             ================================================================== -->
+        <section id="panel-backtest" class="tab-content-panel hidden space-y-6">
+          
+          <!-- Backtest Controls & Unseen Period Guard -->
+          <div class="gl-card p-5 flex items-center justify-between flex-wrap gap-6">
+            
+            <!-- Period Selector -->
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs sm:text-sm uppercase tracking-wide text-ink-2 font-semibold block">
+                  Validation Dataset:
+                </span>
+                <span id="backtest-dataset-badge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  MCX Real Data (59 Trading Days)
+                </span>
+              </div>
+              <div class="inline-flex rounded-lg border border-line-1 p-1 bg-bg-1">
+                <button id="btn-period-unseen" class="px-4 py-2 rounded-md text-xs sm:text-sm font-mono font-semibold text-gold-200 border border-line-2" style="background: color-mix(in srgb, var(--gold-500) 18%, transparent);">
+                  Unseen Period (40% Out-of-Sample)
+                </button>
+                <button id="btn-period-build" class="px-4 py-2 rounded-md text-xs sm:text-sm font-mono text-ink-3 hover:text-ink-1">
+                  Build Period (60% In-Sample)
+                </button>
+              </div>
+            </div>
+
+            <!-- Cost Model Slider -->
+            <div class="flex-1 max-w-xs">
+              <div class="flex justify-between text-sm mb-1.5">
+                <span class="text-ink-2 font-semibold">Cost Per Leg:</span>
+                <span id="display-cost-bps" class="font-mono text-gold-400 font-bold">2.5 bps/leg</span>
+              </div>
+              <input id="slider-cost-bps" type="range" min="0.5" max="8.0" step="0.5" value="2.5" class="w-full h-2 bg-bg-3 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-xs text-ink-3 font-mono mt-1.5">
+                <span>0.5 bps</span>
+                <span>4 Legs Round-Trip: 10 bps</span>
+                <span>8.0 bps</span>
+              </div>
+            </div>
+
+            <!-- Export Trades Button -->
+            <div>
+              <a href="http://127.0.0.1:8000/export/trades.csv" download="karat_trades.csv" class="surface-chip inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-mono hover:text-ink-1 transition-colors">
+                <iconify-icon icon="lucide:download"></iconify-icon>
+                <span>Export Trades CSV</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Headline Verdict Card -->
+          <div id="backtest-verdict-card">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Performance Metrics Grid -->
+          <div id="backtest-metrics-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Attribution vs Gold Benchmark -->
+          <div id="backtest-attribution-card">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Trade Log Table -->
+          <div class="gl-card overflow-hidden">
+            <div class="p-5 border-b border-line-1 flex items-center justify-between flex-wrap gap-2">
+              <h3 class="text-base font-bold text-ink-1 uppercase tracking-wider">
+                Completed Round-Trip Trade Execution Log
+              </h3>
+              <span class="text-xs sm:text-sm text-ink-2 font-mono">Walk-Forward Execution (Marked at Settlement)</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="gl-table">
+                <thead>
+                  <tr>
+                    <th>Entry Date</th>
+                    <th>Exit Date</th>
+                    <th>Pair Traded</th>
+                    <th>Spread Path</th>
+                    <th>Gross P&L</th>
+                    <th>Total Frictions</th>
+                    <th>Net P&L</th>
+                  </tr>
+                </thead>
+                <tbody id="trades-table-body">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             TAB 4: CONTRACT CALENDAR & LIFECYCLE
+             ================================================================== -->
+        <section id="panel-calendar" class="tab-content-panel hidden space-y-6">
+          
+          <!-- MCX Official Contract Specifications -->
+          <div class="gl-card overflow-hidden">
+            <div class="p-5 border-b border-line-1 flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                  <h3 class="text-base font-bold text-ink-1 uppercase tracking-wider">
+                    Official MCX Gold Futures Contract Specifications
+                  </h3>
+                  <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    MCX data (2026-08-03 to 2026-10-23, 59 trading days)
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="gl-table">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Trading Unit</th>
+                    <th>Quote Base</th>
+                    <th>Fineness</th>
+                    <th>Expiry Window</th>
+                  </tr>
+                </thead>
+                <tbody id="calendar-specs-table-body">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Active Lifecycle & Tender Windows -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <h4 class="text-base font-semibold text-ink-1 uppercase tracking-wider">
+                Active Expiries, Roll Windows & Tender Periods
+              </h4>
+              <span class="text-xs sm:text-sm text-crimson-300 font-mono flex items-center gap-1.5 font-medium">
+                <iconify-icon icon="lucide:alert-octagon"></iconify-icon>
+                <span>MCX 3-Day Tender Rule Enforced (5-Day Safety Buffer)</span>
+              </span>
+            </div>
+            <div id="calendar-timeline-container" class="space-y-3">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             TAB 5: DATA QUALITY AUDIT & METHODOLOGY
+             ================================================================== -->
+        <section id="panel-methodology" class="tab-content-panel hidden space-y-6">
+          
+          <!-- Defensible Commodity Intelligence & Frictions (Moved from top banner) -->
+          <div class="gl-card p-5 border-l-4 border-l-gold-500 flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-3.5">
+              <iconify-icon icon="lucide:shield-alert" class="text-gold-400 text-2xl flex-shrink-0"></iconify-icon>
+              <p class="text-sm text-ink-1 leading-relaxed">
+                <strong>Defensible Commodity Intelligence:</strong> All spreads are computed net of 4-leg transaction frictions (Exchange, Stamp Duty, GST, and Bid-Ask Slippage). <em>"No persistent edge survives costs"</em> is treated as an authentic and valid conclusion when true.
+              </p>
+            </div>
+            <div class="text-xs sm:text-sm font-mono text-ink-2">
+              Institutional Baseline Friction: <span class="text-gold-400 font-bold">10.0 bps</span>
+            </div>
+          </div>
+
+
+          <!-- Step-by-Step Worked Math Documentation -->
+          <div class="gl-card p-6 space-y-5">
+            <h3 class="text-base font-bold text-gold-400 uppercase tracking-wider">
+              Mathematical Normalisation & Arbitrage Methodology
+            </h3>
+            
+            <div class="p-4.5 gl-card-subtle font-mono text-sm text-ink-2 space-y-2">
+              <div class="text-gold-200 font-semibold text-sm sm:text-base">1. Price Normalisation Formula:</div>
+              <div class="bg-bg-0 p-3 rounded-lg border border-line-1 text-gold-200 font-mono text-sm">
+                P_normalised = (P_raw / Quote_Base) × (999 / Purity)
+              </div>
+              <p class="text-ink-2 font-sans text-sm pt-1 leading-relaxed">
+                Example: GOLDM quotes at ₹1,19,500 per 10g at 995 fineness. GOLDTEN quotes at ₹1,20,000 per 10g at 999 fineness.<br>
+                • GOLDM: (119500 / 10) × (999 / 995) = ₹11,997.99 / gram<br>
+                • GOLDTEN: (120000 / 10) × (999 / 999) = ₹12,000.00 / gram<br>
+                • Spread (bps): ((11997.99 - 12000.00) / 12000.00) × 10,000 = <strong>-1.68 bps</strong>
+              </p>
+            </div>
+
+            <div class="p-4.5 gl-card-subtle font-mono text-sm text-ink-2 space-y-2">
+              <div class="text-gold-200 font-semibold text-sm sm:text-base">2. 4-Leg Execution Friction Model:</div>
+              <div class="bg-bg-0 p-3 rounded-lg border border-line-1 text-gold-200 font-mono text-sm">
+                Total Round-Trip Cost = 4 × (Brokerage + Exchange Fees + Stamp Duty + GST) + Slippage
+              </div>
+              <p class="text-ink-2 font-sans text-sm pt-1 leading-relaxed">
+                Entering a pair requires simultaneously buying Leg A and selling Leg B (2 legs). Exiting requires unwinding both (2 legs).
+                Total = 4 legs. At 2.5 bps/leg, the round-trip cost hurdle is 10.0 bps. Any gap narrower than 10.0 bps is guaranteed negative alpha.
+              </p>
+            </div>
+
+            <div class="p-4.5 gl-card-subtle font-mono text-sm text-ink-2 space-y-2">
+              <div class="text-gold-200 font-semibold text-sm sm:text-base">3. Zero Lookahead Rolling Z-Score:</div>
+              <div class="bg-bg-0 p-3 rounded-lg border border-line-1 text-gold-200 font-mono text-sm">
+                z_t = (Spread_t - Mean[t-W...t-1]) / StdDev[t-W...t-1]
+              </div>
+              <p class="text-ink-2 font-sans text-sm pt-1 leading-relaxed">
+                Computed strictly over trailing observations prior to day t (zero contemporaneous or future leak).
+              </p>
+            </div>
+            </div>
+          </div>
+
+          <!-- Direct Data Export Links -->
+          <div class="gl-card p-5 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-ink-1">Export Raw Audit Files</h4>
+            </div>
+            <div class="flex items-center gap-3">
+              <a href="http://127.0.0.1:8000/export/normalised.csv" download="normalised_gold_prices.csv" class="px-3 py-1.5 rounded-lg bg-bg-1 hover:bg-[#1E242C] border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 transition-colors">
+                Normalised Prices CSV
+              </a>
+              <a href="http://127.0.0.1:8000/export/spreads.csv" download="karat_spreads.csv" class="px-3 py-1.5 rounded-lg bg-bg-1 hover:bg-[#1E242C] border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 transition-colors">
+                Spreads CSV
+              </a>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- App Footer -->
+      <footer class="surface-footer py-6">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-3 font-mono">
+          <div class="flex items-center gap-2">
+            <div class="gold-gem w-5 h-5 rounded flex items-center justify-center text-[10px]">
+              <iconify-icon icon="lucide:gem" style="color: var(--bg-0)"></iconify-icon>
+            </div>
+            <span>KARAT</span>
+          </div>
+          <div class="flex items-center gap-4 text-ink-3">
+            <span>Walk-Forward Validation</span>
+            <span class="w-1 h-1 rounded-full bg-gold-800"></span>
+            <span>4-Leg Cost Hurdle</span>
+            <span class="w-1 h-1 rounded-full bg-gold-800"></span>
+            <span>Zero Lookahead</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Floating Scroll to Top Quick Action -->
+    <button id="btn-scroll-top" class="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-[#170E11] hover:bg-[#20141A] text-gold-400 border border-gold-500/40 shadow-2xl opacity-0 pointer-events-none transition-all duration-300 transform translate-y-3 hover:scale-110 cursor-pointer" title="Scroll to Top" aria-label="Scroll to top">
+      <iconify-icon icon="lucide:arrow-up" class="text-lg"></iconify-icon>
+    </button>
+  </div>
+
+  <!-- Tubes 3D Cursor Background Integration Script -->
+  <script type="module">
+    // Tubes Interactive Background Prompt — Original Palette Presets
+    const colorPresets = [
+      {
+        name: "Cyberpunk Neon",
+        tubes: ["#f967fb", "#53bc28", "#6958d5"],
+        lights: ["#83f36e", "#fe8a2e", "#ff008a", "#60aed5"]
+      },
+      {
+        name: "Midnight Ultraviolet",
+        tubes: ["#4a00e0", "#8e2de2", "#00ffff"],
+        lights: ["#9b51e0", "#2f80ed", "#00c6ff", "#ffffff"]
+      },
+      {
+        name: "Sunset Vaporwave",
+        tubes: ["#ff758c", "#ff7eb3", "#7928ca"],
+        lights: ["#ff9a8e", "#fad0c4", "#ffd1ff", "#b19cd9"]
+      }
+    ];
+
+    let currentPresetIndex = 0;
+    let tubesApp = null;
+
+    async function initTubes() {
+      const canvas = document.getElementById('tubes-canvas');
+      if (!canvas) return;
+
+      try {
+        const module = await import('https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js');
+        const TubesCursor = module.default;
+
+        const initial = colorPresets[0];
+        tubesApp = TubesCursor(canvas, {
+          tubes: {
+            colors: initial.tubes,
+            lights: {
+              intensity: 200,
+              colors: initial.lights
+            }
+          }
+        });
+
+        // Click interaction: cycle preset or randomize vibrant palette
+        window.addEventListener('click', (e) => {
+          if (e.target.closest('#btn-experience-karat') || e.target.closest('#spotlight-wrapper') || e.target.closest('#karat-ai-container')) {
+            return;
+          }
+          if (!tubesApp) return;
+
+          currentPresetIndex = (currentPresetIndex + 1) % colorPresets.length;
+          const preset = colorPresets[currentPresetIndex];
+          tubesApp.tubes.setColors(preset.tubes);
+          tubesApp.tubes.setLightsColors(preset.lights);
+        });
+
+      } catch (err) {
+        console.error('Failed to initialize 3D tubes cursor background:', err);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTubes);
+    } else {
+      initTubes();
+    }
+  </script>
+
+  <!-- ==========================================================================
+       KARAT AI GUIDE: FLOATING CHATBOT POPUP
+       ========================================================================== -->
+  <div id="karat-ai-container" class="karat-ai-container font-outfit">
+    <!-- Floating Launcher Button -->
+    <button id="karat-ai-launcher" class="karat-ai-launcher group" aria-label="Open KARAT AI Guide" title="Ask KARAT AI Guide">
+      <div class="launcher-glow"></div>
+      <div class="launcher-inner">
+        <iconify-icon icon="lucide:sparkles" class="launcher-icon text-xl text-amber-300 group-hover:scale-110 group-hover:rotate-12 transition-transform"></iconify-icon>
+        <span class="launcher-badge">AI</span>
+      </div>
+      <span class="launcher-tooltip">Ask KARAT AI</span>
+    </button>
+
+    <!-- Floating Chat Window -->
+    <div id="karat-ai-window" class="karat-ai-window" aria-hidden="true">
+      <!-- Window Header -->
+      <div class="ai-header">
+        <div class="ai-header-left">
+          <div class="ai-avatar">
+            <iconify-icon icon="lucide:gem" class="text-amber-300 text-base"></iconify-icon>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="ai-title font-karat">KARAT AI Guide</span>
+              <span class="ai-status-dot" title="Online & Context-Aware"></span>
+            </div>
+            <div id="ai-context-indicator" class="ai-subtitle">
+              <span>Context: Overview</span>
+            </div>
+          </div>
+        </div>
+        <div class="ai-header-actions">
+          <button id="ai-btn-clear" class="ai-btn-icon" title="Clear conversation" aria-label="Clear conversation">
+            <iconify-icon icon="lucide:rotate-ccw"></iconify-icon>
+          </button>
+          <button id="ai-btn-minimize" class="ai-btn-icon" title="Minimize chat" aria-label="Minimize chat">
+            <iconify-icon icon="lucide:x"></iconify-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Suggested Quick Prompt Chips -->
+      <div class="ai-suggested-wrapper">
+        <div class="ai-suggested-label">
+          <iconify-icon icon="lucide:lightbulb" class="text-amber-400 text-xs"></iconify-icon>
+          <span>Suggested for this screen:</span>
+        </div>
+        <div id="ai-suggested-chips" class="ai-suggested-chips">
+          <!-- Dynamically populated based on active tab -->
+        </div>
+      </div>
+
+      <!-- Message History Container -->
+      <div id="ai-chat-messages" class="ai-chat-messages">
+        <!-- Messages rendered dynamically -->
+      </div>
+
+      <!-- Typing / Loading Indicator -->
+      <div id="ai-typing-indicator" class="ai-typing-indicator hidden">
+        <div class="typing-bubble">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <span class="text-xs text-amber-300/80 font-mono">Analyzing contract metrics...</span>
+      </div>
+
+      <!-- Message Input Bar -->
+      <form id="ai-chat-form" class="ai-input-bar">
+        <input 
+          id="ai-chat-input" 
+          type="text" 
+          placeholder="Ask about spreads, normalisation, math..." 
+          autocomplete="off"
+          class="ai-input"
+        />
+        <button id="ai-chat-send" type="submit" class="ai-send-btn" aria-label="Send message">
+          <iconify-icon icon="lucide:send" class="text-base"></iconify-icon>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cursor Spotlight Controller -->
+  <script>
+    (function () {
+      const area = document.querySelector('.spotlight-area');
+      const gradient = document.querySelector('.spotlight-gradient');
+
+      if (area && gradient) {
+        area.addEventListener('mousemove', (e) => {
+          const rect = area.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          gradient.style.left = x + 'px';
+          gradient.style.top = y + 'px';
+        });
+      }
+    })();
+  </script>
+
+  <!-- Puter.js Free AI Chat Model (No API Key Required) -->
+  <script src="https://js.puter.com/v2/"></script>
+
+  <!-- Load KARAT Client Application Logic -->
+  <script src="app.js?v=2.1"></script>
+</body>
+</html>
+

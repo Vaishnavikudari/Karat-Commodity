@@ -1,0 +1,428 @@
+{
+  "status": "ready",
+  "data_source": "mcx",
+  "pipeline_version": "2.0_multi_file_historical",
+  "total_files_scanned": 24,
+  "files_discovered": [
+    "BhavCopyCommodiyWise_03082026 (1).csv",
+    "BhavCopyCommodiyWise_03082026 (2).csv",
+    "BhavCopyCommodiyWise_03082026 (3).csv",
+    "BhavCopyCommodiyWise_03082026.csv",
+    "BhavCopyDateWise_01102026.csv",
+    "BhavCopyDateWise_02102026.csv",
+    "BhavCopyDateWise_03102026.csv",
+    "BhavCopyDateWise_04102026.csv",
+    "BhavCopyDateWise_05102026.csv",
+    "BhavCopyDateWise_07102026.csv",
+    "BhavCopyDateWise_08102026.csv",
+    "BhavCopyDateWise_09102026.csv",
+    "BhavCopyDateWise_10102026.csv",
+    "BhavCopyDateWise_11102026.csv",
+    "BhavCopyDateWise_14102026.csv",
+    "BhavCopyDateWise_20092026.csv",
+    "BhavCopyDateWise_21092026.csv",
+    "BhavCopyDateWise_22092026.csv",
+    "BhavCopyDateWise_23092026.csv",
+    "BhavCopyDateWise_24092026.csv",
+    "BhavCopyDateWise_25092026.csv",
+    "BhavCopyDateWise_26092026.csv",
+    "BhavCopyDateWise_27092026.csv",
+    "BhavCopyDateWise_28092026.csv"
+  ],
+  "files_used_count": 24,
+  "files_used": [
+    "BhavCopyCommodiyWise_03082026 (1).csv",
+    "BhavCopyCommodiyWise_03082026 (2).csv",
+    "BhavCopyCommodiyWise_03082026 (3).csv",
+    "BhavCopyCommodiyWise_03082026.csv",
+    "BhavCopyDateWise_01102026.csv",
+    "BhavCopyDateWise_02102026.csv",
+    "BhavCopyDateWise_03102026.csv",
+    "BhavCopyDateWise_04102026.csv",
+    "BhavCopyDateWise_05102026.csv",
+    "BhavCopyDateWise_07102026.csv",
+    "BhavCopyDateWise_08102026.csv",
+    "BhavCopyDateWise_09102026.csv",
+    "BhavCopyDateWise_10102026.csv",
+    "BhavCopyDateWise_11102026.csv",
+    "BhavCopyDateWise_14102026.csv",
+    "BhavCopyDateWise_20092026.csv",
+    "BhavCopyDateWise_21092026.csv",
+    "BhavCopyDateWise_22092026.csv",
+    "BhavCopyDateWise_23092026.csv",
+    "BhavCopyDateWise_24092026.csv",
+    "BhavCopyDateWise_25092026.csv",
+    "BhavCopyDateWise_26092026.csv",
+    "BhavCopyDateWise_27092026.csv",
+    "BhavCopyDateWise_28092026.csv"
+  ],
+  "files_rejected_count": 0,
+  "files_rejected": [],
+  "per_file_breakdown": {
+    "BhavCopyCommodiyWise_03082026 (1).csv": {
+      "total_rows_in_file": 59,
+      "tracked_rows_extracted": 59,
+      "symbols": [
+        "GOLDGUINEA"
+      ],
+      "distinct_dates": 59,
+      "date_min": "2026-08-03",
+      "date_max": "2026-10-23"
+    },
+    "BhavCopyCommodiyWise_03082026 (2).csv": {
+      "total_rows_in_file": 59,
+      "tracked_rows_extracted": 59,
+      "symbols": [
+        "GOLDTEN"
+      ],
+      "distinct_dates": 59,
+      "date_min": "2026-08-03",
+      "date_max": "2026-10-23"
+    },
+    "BhavCopyCommodiyWise_03082026 (3).csv": {
+      "total_rows_in_file": 59,
+      "tracked_rows_extracted": 59,
+      "symbols": [
+        "GOLDPETAL"
+      ],
+      "distinct_dates": 59,
+      "date_min": "2026-08-03",
+      "date_max": "2026-10-23"
+    },
+    "BhavCopyCommodiyWise_03082026.csv": {
+      "total_rows_in_file": 59,
+      "tracked_rows_extracted": 59,
+      "symbols": [
+        "GOLDM"
+      ],
+      "distinct_dates": 59,
+      "date_min": "2026-08-03",
+      "date_max": "2026-10-23"
+    },
+    "BhavCopyDateWise_01102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_02102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_03102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_04102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_05102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_07102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_08102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_09102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_10102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_11102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_14102026.csv": {
+      "total_rows_in_file": 15440,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-10-14",
+      "date_max": "2026-10-14"
+    },
+    "BhavCopyDateWise_20092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_21092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_22092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_23092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_24092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_25092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_26092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_27092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    },
+    "BhavCopyDateWise_28092026.csv": {
+      "total_rows_in_file": 14961,
+      "tracked_rows_extracted": 24,
+      "symbols": [
+        "GOLDGUINEA",
+        "GOLDM",
+        "GOLDPETAL",
+        "GOLDTEN"
+      ],
+      "distinct_dates": 1,
+      "date_min": "2026-09-29",
+      "date_max": "2026-09-29"
+    }
+  },
+  "total_raw_rows_scanned": 304725,
+  "tracked_gold_rows_extracted": 716,
+  "duplicate_rows_removed": 440,
+  "valid_clean_rows_retained": 276,
+  "distinct_trading_dates_count": 59,
+  "date_range": {
+    "start": "2026-08-03",
+    "end": "2026-10-23"
+  },
+  "row_counts_by_contract": {
+    "GOLDGUINEA": 69,
+    "GOLDM": 69,
+    "GOLDPETAL": 69,
+    "GOLDTEN": 69
+  },
+  "row_counts_by_contract_and_expiry": {
+    "GOLDGUINEA (2026-09-30)": 1,
+    "GOLDGUINEA (2026-10-30)": 59,
+    "GOLDGUINEA (2026-11-30)": 2,
+    "GOLDGUINEA (2026-12-31)": 2,
+    "GOLDGUINEA (2027-01-29)": 2,
+    "GOLDGUINEA (2027-02-26)": 2,
+    "GOLDGUINEA (2027-03-31)": 1,
+    "GOLDM (2026-10-05)": 1,
+    "GOLDM (2026-11-05)": 59,
+    "GOLDM (2026-12-04)": 2,
+    "GOLDM (2027-01-05)": 2,
+    "GOLDM (2027-02-05)": 2,
+    "GOLDM (2027-03-05)": 2,
+    "GOLDM (2027-04-05)": 1,
+    "GOLDPETAL (2026-09-30)": 1,
+    "GOLDPETAL (2026-10-30)": 59,
+    "GOLDPETAL (2026-11-30)": 2,
+    "GOLDPETAL (2026-12-31)": 2,
+    "GOLDPETAL (2027-01-29)": 2,
+    "GOLDPETAL (2027-02-26)": 2,
+    "GOLDPETAL (2027-03-31)": 1,
+    "GOLDTEN (2026-09-30)": 1,
+    "GOLDTEN (2026-10-30)": 59,
+    "GOLDTEN (2026-11-30)": 2,
+    "GOLDTEN (2026-12-31)": 2,
+    "GOLDTEN (2027-01-29)": 2,
+    "GOLDTEN (2027-02-26)": 2,
+    "GOLDTEN (2027-03-31)": 1
+  },
+  "no_trade_rows_count": 0,
+  "trading_calendar_reconciliation": {
+    "total_calendar_days": 82,
+    "total_weekdays_mon_fri": 60,
+    "trading_days_present": 59,
+    "missing_weekdays_count": 1,
+    "missing_weekdays": [
+      "2026-10-02"
+    ],
+    "statutory_market_holidays_confirmed": {
+      "2026-10-02": "Mahatma Gandhi Jayanti (statutory national market holiday on MCX)"
+    },
+    "unexplained_missing_trading_days": []
+  },
+  "price_conflicts_detected": 0,
+  "price_conflicts": [],
+  "rejections_by_reason": {
+    "non_tracked_symbol": 304009,
+    "bad_format": 0
+  }
+}
