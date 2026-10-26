@@ -59,7 +59,7 @@ $$Z_t = \frac{\text{Spread}_t - \mu_{20}(t)}{\sigma_{20}(t)}$$
 
 ---
 
-## 🏛️ System Architecture
+##  System Architecture
 
 ```mermaid
 graph TD
@@ -77,7 +77,7 @@ graph TD
 
 ---
 
-## 🚀 Key Modules & Endpoints
+##  Key Modules & Endpoints
 
 | Endpoint | Description |
 | :--- | :--- |
@@ -94,20 +94,3 @@ graph TD
 | `GET /export/normalised.csv` | Comprehensive normalised prices dataset download |
 
 ---
-
-## 🎯 2-Minute Pitch & Demonstration Script
-
-1. **The Hook (0:00 - 0:25)**:
-   > *"Trading MCX Gold Futures isn't apples-to-apples. GOLDM is quoted in ₹/10g at 995 fineness, whereas GOLDTEN is 999 fineness. Many retail and algorithmic desks trade artificial spreads without adjusting for the 40-basis-point purity gap and contract multipliers. Meet **KARAT**."*
-
-2. **The Solution (0:25 - 0:50)**:
-   > *"KARAT ingests raw daily Bhavcopy, normalises every single contract into pure ₹/g of 999 fine gold, and computes real-time basis spreads. In the Overview screen, you can see all 4 contracts instantly unified side-by-side with 7-day sparklines."*
-
-3. **Spread Lab & Real-Time Intelligence (0:50 - 1:15)**:
-   > *"In our **Spread Lab**, traders can select any pair—like GOLDM vs GOLDTEN. KARAT plots the raw spread, carry-adjusted spread, and rolling 20-day $\pm 2\sigma$ Z-score bands, automatically detecting mean-reverting statistical arbitrage opportunities."*
-
-4. **Institutional-Grade Backtesting & Risk Discipline (1:15 - 1:45)**:
-   > *"Unlike naive backtesters that overfit on future data, KARAT enforces strict **Split-Sample Validation**: headline metrics are computed strictly on the **Unseen Holdout Period**. We account for 4 transaction legs per trade, apply double slippage on thin-volume contracts, and auto-liquidate positions before MCX physical delivery tender periods."*
-
-5. **Closing (1:45 - 2:00)**:
-   > *"KARAT delivers transparency, institutional rigor, and pure alpha for the Indian gold derivatives market. Built with FastAPI, tested with 60 rigorous invariants, and wrapped in a bespoke dark terminal interface."*
