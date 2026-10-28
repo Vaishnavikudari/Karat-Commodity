@@ -11,8 +11,6 @@
 
 ## 🌐 Official Live Deployment
 - **Live Web Application:** [https://karat-commodity-t6ym.onrender.com](https://karat-commodity-t6ym.onrender.com)
-- **Interactive Swagger API Docs:** [https://karat-commodity-t6ym.onrender.com/docs](https://karat-commodity-t6ym.onrender.com/docs)
-- **API Health Endpoint:** [https://karat-commodity-t6ym.onrender.com/health](https://karat-commodity-t6ym.onrender.com/health)
 
 ---
 
