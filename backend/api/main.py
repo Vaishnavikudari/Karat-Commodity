@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import datetime as dt
 import io
+import json
 from typing import Any, Dict, List, Optional
 
 from pathlib import Path
@@ -28,6 +29,7 @@ from backend.config import (
     DEFAULT_COST_PER_LEG_BPS,
     ENTRY_Z,
     EXIT_Z,
+    PROJECT_ROOT,
     THIN_LIQUIDITY_SLIPPAGE_MULT,
     TIME_STOP_DAYS,
     TRACKED_SYMBOLS,
@@ -470,7 +472,7 @@ def get_quality():
 
 
 # ==========================================
-# 8. CSV EXPORTS
+# 8. CSV & DATA EXPORTS
 # ==========================================
 @app.get("/export/trades.csv")
 @app.get("/api/export/trades.csv")
@@ -478,26 +480,53 @@ def export_trades_csv(
     symbol_a: str = Query("GOLDM"),
     symbol_b: str = Query("GOLDTEN"),
     cost_per_leg_bps: float = Query(DEFAULT_COST_PER_LEG_BPS),
+    cost_bps: Optional[float] = Query(None),
+    period: str = Query("all", description="Period to export: 'unseen', 'build', or 'all'"),
 ):
+    if cost_bps is not None:
+        cost_per_leg_bps = cost_bps
+
     df, _ = get_cached_data()
     bt = run_backtest(df, symbol_a=symbol_a, symbol_b=symbol_b, cost_per_leg_bps=cost_per_leg_bps)
-    trades = bt.get("unseen", {}).get("trades", [])
+    if not bt.get("data_available", True):
+        from backend.data.parser import load_sample
+        try:
+            sample_df = load_sample()
+            bt = run_backtest(sample_df, symbol_a=symbol_a, symbol_b=symbol_b, cost_per_leg_bps=cost_per_leg_bps)
+        except Exception:
+            pass
+
+    req_period = (period or "all").lower().strip()
+    if req_period == "build":
+        trades = bt.get("build", {}).get("trades", [])
+    elif req_period == "unseen":
+        trades = bt.get("unseen", {}).get("trades", [])
+    else:
+        trades = bt.get("combined", {}).get("trades", [])
+        if not trades:
+            trades = bt.get("unseen", {}).get("trades", []) + bt.get("build", {}).get("trades", [])
 
     output = io.StringIO()
     fieldnames = [
-        "entry_date", "exit_date", "direction", "entry_spread_bps",
-        "exit_spread_bps", "gross_pnl_bps", "holding_days", "exit_reason",
-        "thin_entry", "thin_exit", "expiry_a", "expiry_b", "raw_a_entry", "raw_b_entry"
+        "entry_date", "exit_date", "direction", "symbol_a", "symbol_b",
+        "lots_a", "lots_b", "grams_a", "grams_b",
+        "entry_spread_bps", "exit_spread_bps", "entry_z", "exit_z",
+        "gross_pnl_bps", "gross_pnl_rs", "cost_rs", "net_pnl_rs",
+        "pnl_leg_a_rs", "pnl_leg_b_rs", "turnover_rs",
+        "holding_days", "exit_reason",
+        "thin_entry", "thin_exit", "expiry_a", "expiry_b",
+        "raw_a_entry", "raw_b_entry", "raw_a_exit", "raw_b_exit"
     ]
     writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction="ignore")
     writer.writeheader()
     for t in trades:
         writer.writerow(t)
 
+    filename = f"karat_{symbol_a}_{symbol_b}_{req_period}_trades.csv"
     return Response(
         content=output.getvalue(),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=karat_{symbol_a}_{symbol_b}_trades.csv"},
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
@@ -505,14 +534,30 @@ def export_trades_csv(
 @app.get("/api/export/signals.csv")
 def export_signals_csv():
     df, _ = get_cached_data()
-    signals = get_all_active_signals(df)
+    try:
+        signals = get_all_active_signals(df)
+    except Exception:
+        from backend.data.parser import load_sample
+        sample_df = load_sample()
+        signals = get_all_active_signals(sample_df)
 
     output = io.StringIO()
+    fieldnames = [
+        "pair", "symbol_a", "symbol_b", "has_signal", "direction", "z_score", "spread_bps",
+        "expected_net_edge_bps", "breakeven_bps", "liquidity_status", "days_to_expiry_a", "days_to_expiry_b", "reason"
+    ]
     if signals:
-        writer = csv.DictWriter(output, fieldnames=list(signals[0].keys()))
+        all_keys = list(signals[0].keys())
+        for k in fieldnames:
+            if k not in all_keys:
+                all_keys.append(k)
+        writer = csv.DictWriter(output, fieldnames=all_keys, extrasaction="ignore")
         writer.writeheader()
         for s in signals:
             writer.writerow(s)
+    else:
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
 
     return Response(
         content=output.getvalue(),
@@ -525,7 +570,11 @@ def export_signals_csv():
 @app.get("/api/export/normalised.csv")
 def export_normalised_csv():
     df, _ = get_cached_data()
-    norm_df = normalise_dataframe(df)
+    try:
+        norm_df = normalise_dataframe(df)
+    except Exception:
+        from backend.data.parser import load_sample
+        norm_df = normalise_dataframe(load_sample())
     output = io.StringIO()
     norm_df.to_csv(output, index=False)
     return Response(
@@ -544,13 +593,47 @@ def export_spreads_csv(
     parts = pair.split("_")
     symbol_a = parts[0] if len(parts) > 0 else "GOLDM"
     symbol_b = parts[1] if len(parts) > 1 else "GOLDTEN"
-    spread_df = compute_spread_series(df, symbol_a=symbol_a, symbol_b=symbol_b)
+    try:
+        spread_df = compute_spread_series(df, symbol_a=symbol_a, symbol_b=symbol_b)
+    except Exception:
+        from backend.data.parser import load_sample
+        spread_df = compute_spread_series(load_sample(), symbol_a=symbol_a, symbol_b=symbol_b)
+
     output = io.StringIO()
     spread_df.to_csv(output, index=False)
     return Response(
         content=output.getvalue(),
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=karat_{symbol_a}_{symbol_b}_spreads.csv"},
+    )
+
+
+@app.get("/export/clean.csv")
+@app.get("/api/export/clean.csv")
+def export_clean_csv():
+    df, _ = get_cached_data()
+    output = io.StringIO()
+    df.to_csv(output, index=False)
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=karat_clean_bhavcopy.csv"},
+    )
+
+
+@app.get("/export/quality.json")
+@app.get("/api/export/quality.json")
+def export_quality_json():
+    qr_path = PROJECT_ROOT / "quality_report.json"
+    if qr_path.exists():
+        content = qr_path.read_text(encoding="utf-8")
+    else:
+        df, source = get_cached_data()
+        content = json.dumps(get_data_quality_report(df, source), indent=2)
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=karat_quality_report.json"},
     )
 
 

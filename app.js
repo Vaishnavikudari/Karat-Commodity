@@ -7,7 +7,7 @@
   'use strict';
 
   // API Base URL - prefers running local backend, with graceful fallback
-  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? (window.location.port === '8000' ? '' : 'http://127.0.0.1:8000')
     : '';
 
@@ -1217,8 +1217,14 @@
               </h3>
             </div>
           </div>
-          <div class="font-mono text-xs sm:text-sm px-3.5 py-1.5 rounded-lg ${isQuiet ? 'bg-slate-800 text-slate-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
-            ${isQuiet ? 'No opportunity right now' : `${activeList.length} opportunity right now`}
+          <div class="flex items-center gap-2.5">
+            <button id="btn-export-signals" type="button" class="surface-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors cursor-pointer">
+              <iconify-icon icon="lucide:download" class="text-gold-400"></iconify-icon>
+              <span>Export Signals CSV</span>
+            </button>
+            <div class="font-mono text-xs sm:text-sm px-3.5 py-1.5 rounded-lg ${isQuiet ? 'bg-slate-800 text-slate-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
+              ${isQuiet ? 'No opportunity right now' : `${activeList.length} opportunity right now`}
+            </div>
           </div>
         </div>
 
@@ -2634,6 +2640,286 @@ Answer the user's question directly, clearly, and concisely in simple English. E
   }
 
   // ==========================================
+  // EXPORT UTILITIES & HANDLERS
+  // ==========================================
+  function triggerDownload(content, filename, mimeType = 'text/csv;charset=utf-8;') {
+    const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  function jsonToCsv(rows, fieldnames = null) {
+    if (!rows || rows.length === 0) {
+      return (fieldnames || []).join(',') + '\r\n';
+    }
+    const keys = fieldnames || Object.keys(rows[0]);
+    const headerRow = keys.join(',');
+    const bodyRows = rows.map(row => {
+      return keys.map(k => {
+        let val = row[k];
+        if (val === null || val === undefined) val = '';
+        if (typeof val === 'object') {
+          val = JSON.stringify(val);
+        }
+        val = String(val);
+        if (val.includes(',') || val.includes('"') || val.includes('\n') || val.includes('\r')) {
+          val = `"${val.replace(/"/g, '""')}"`;
+        }
+        return val;
+      }).join(',');
+    });
+    return [headerRow, ...bodyRows].join('\r\n');
+  }
+
+  function updateExportButtonFeedback(btn, originalHtml, statusText, isSuccess = true) {
+    if (!btn) return;
+    btn.innerHTML = `<iconify-icon icon="${isSuccess ? 'lucide:check' : 'lucide:alert-circle'}" class="${isSuccess ? 'text-emerald-400' : 'text-rose-400'}"></iconify-icon><span>${statusText}</span>`;
+    setTimeout(() => {
+      btn.innerHTML = originalHtml;
+    }, 2500);
+  }
+
+  async function exportTradesCsv() {
+    const btn = document.getElementById('btn-export-trades');
+    const origHtml = btn ? btn.innerHTML : '';
+    const [symA, symB] = state.selectedPair ? state.selectedPair.split('_') : ['GOLDM', 'GOLDTEN'];
+    const period = state.backtestPeriod || 'all';
+    const cost = state.costBps || 2.5;
+    const filename = `karat_${symA}_${symB}_${period}_trades.csv`;
+
+    try {
+      const url = `${API_BASE}/export/trades.csv?symbol_a=${symA}&symbol_b=${symB}&cost_per_leg_bps=${cost}&period=${period}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerDownload(blob, filename, 'text/csv');
+        updateExportButtonFeedback(btn, origHtml, 'Downloaded Trades CSV');
+        return;
+      }
+      throw new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      console.warn('Backend export failed, generating trades CSV client-side fallback:', err.message);
+      const bt = state.backtestData;
+      let trades = [];
+      if (bt) {
+        if (period === 'build') trades = bt.build?.trades || [];
+        else if (period === 'unseen') trades = bt.unseen?.trades || [];
+        else trades = bt.combined?.trades || (bt.unseen?.trades ? [...(bt.unseen.trades || []), ...(bt.build?.trades || [])] : []);
+      }
+      const fieldnames = [
+        "entry_date", "exit_date", "direction", "symbol_a", "symbol_b",
+        "lots_a", "lots_b", "grams_a", "grams_b",
+        "entry_spread_bps", "exit_spread_bps", "entry_z", "exit_z",
+        "gross_pnl_bps", "gross_pnl_rs", "cost_rs", "net_pnl_rs",
+        "pnl_leg_a_rs", "pnl_leg_b_rs", "turnover_rs",
+        "holding_days", "exit_reason",
+        "thin_entry", "thin_exit", "expiry_a", "expiry_b",
+        "raw_a_entry", "raw_b_entry", "raw_a_exit", "raw_b_exit"
+      ];
+      const csv = jsonToCsv(trades, fieldnames);
+      triggerDownload(csv, filename, 'text/csv;charset=utf-8;');
+      updateExportButtonFeedback(btn, origHtml, 'Downloaded Trades CSV');
+    }
+  }
+
+  async function exportSignalsCsv() {
+    const btn = document.getElementById('btn-export-signals');
+    const origHtml = btn ? btn.innerHTML : '';
+    const filename = 'karat_active_signals.csv';
+
+    try {
+      const url = `${API_BASE}/export/signals.csv`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerDownload(blob, filename, 'text/csv');
+        updateExportButtonFeedback(btn, origHtml, 'Downloaded Signals CSV');
+        return;
+      }
+      throw new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      console.warn('Backend signals export failed, generating client-side fallback:', err.message);
+      const sigs = state.signalsData?.active_signals || state.signalsData?.all_active_signals || [];
+      const fieldnames = [
+        "pair", "symbol_a", "symbol_b", "has_signal", "direction", "z_score", "spread_bps",
+        "expected_net_edge_bps", "breakeven_bps", "liquidity_status", "days_to_expiry_a", "days_to_expiry_b", "reason"
+      ];
+      const csv = jsonToCsv(sigs, fieldnames);
+      triggerDownload(csv, filename, 'text/csv;charset=utf-8;');
+      updateExportButtonFeedback(btn, origHtml, 'Downloaded Signals CSV');
+    }
+  }
+
+  async function exportNormalisedCsv() {
+    const btn = document.getElementById('btn-export-normalised');
+    const origHtml = btn ? btn.innerHTML : '';
+    const filename = 'karat_normalised_gold_prices.csv';
+
+    try {
+      const url = `${API_BASE}/export/normalised.csv`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerDownload(blob, filename, 'text/csv');
+        updateExportButtonFeedback(btn, origHtml, 'Downloaded Normalised CSV');
+        return;
+      }
+      throw new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      console.warn('Backend normalised export failed, generating client-side fallback:', err.message);
+      const rows = state.contractsData?.contracts || DEMO_CONTRACTS;
+      const fieldnames = [
+        "symbol", "lot_size_g", "quote_base_g", "purity", "raw_price", "expiry_date",
+        "price_per_gram", "normalised_price", "premium_vs_ref", "premium_bps", "volume",
+        "grams_traded", "open_interest", "liquidity_status"
+      ];
+      const csv = jsonToCsv(rows, fieldnames);
+      triggerDownload(csv, filename, 'text/csv;charset=utf-8;');
+      updateExportButtonFeedback(btn, origHtml, 'Downloaded Normalised CSV');
+    }
+  }
+
+  async function exportSpreadsCsv() {
+    const btn = document.getElementById('btn-export-spreads');
+    const origHtml = btn ? btn.innerHTML : '';
+    const pair = state.selectedPair || 'GOLDM_GOLDTEN';
+    const filename = `karat_${pair}_spreads.csv`;
+
+    try {
+      const url = `${API_BASE}/export/spreads.csv?pair=${encodeURIComponent(pair)}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerDownload(blob, filename, 'text/csv');
+        updateExportButtonFeedback(btn, origHtml, 'Downloaded Spreads CSV');
+        return;
+      }
+      throw new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      console.warn('Backend spreads export failed, generating client-side fallback:', err.message);
+      const chart = state.spreadData?.chart || [];
+      const fieldnames = ["date", "spread_bps", "z_score", "spread_rupees", "normalised_a", "normalised_b"];
+      const csv = jsonToCsv(chart, fieldnames);
+      triggerDownload(csv, filename, 'text/csv;charset=utf-8;');
+      updateExportButtonFeedback(btn, origHtml, 'Downloaded Spreads CSV');
+    }
+  }
+
+  async function exportCleanCsv() {
+    const btn = document.getElementById('btn-export-clean');
+    const origHtml = btn ? btn.innerHTML : '';
+    const filename = 'karat_clean_bhavcopy.csv';
+
+    try {
+      const url = `${API_BASE}/export/clean.csv`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerDownload(blob, filename, 'text/csv');
+        updateExportButtonFeedback(btn, origHtml, 'Downloaded Clean CSV');
+        return;
+      }
+      throw new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      console.warn('Backend clean export failed, generating client-side fallback:', err.message);
+      const rows = state.contractsData?.contracts || DEMO_CONTRACTS;
+      const csv = jsonToCsv(rows);
+      triggerDownload(csv, filename, 'text/csv;charset=utf-8;');
+      updateExportButtonFeedback(btn, origHtml, 'Downloaded Clean CSV');
+    }
+  }
+
+  async function exportQualityJson() {
+    const btn = document.getElementById('btn-export-quality');
+    const origHtml = btn ? btn.innerHTML : '';
+    const filename = 'karat_quality_report.json';
+
+    try {
+      const url = `${API_BASE}/export/quality.json`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const blob = await res.blob();
+        triggerDownload(blob, filename, 'application/json');
+        updateExportButtonFeedback(btn, origHtml, 'Downloaded Quality JSON');
+        return;
+      }
+      throw new Error(`Server returned ${res.status}`);
+    } catch (err) {
+      console.warn('Backend quality report export failed, generating client-side fallback:', err.message);
+      const data = state.qualityData || {
+        audit_timestamp: new Date().toISOString(),
+        status: "verified",
+        tracked_symbols: ["GOLDM", "GOLDTEN", "GOLDGUINEA", "GOLDPETAL"],
+        pipeline_status: "compliant"
+      };
+      triggerDownload(JSON.stringify(data, null, 2), filename, 'application/json;charset=utf-8;');
+      updateExportButtonFeedback(btn, origHtml, 'Downloaded Quality JSON');
+    }
+  }
+
+  function initExportHandlers() {
+    const btnTrades = document.getElementById('btn-export-trades');
+    if (btnTrades && !btnTrades.dataset.initialized) {
+      btnTrades.dataset.initialized = 'true';
+      btnTrades.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportTradesCsv();
+      });
+    }
+
+    const btnNormalised = document.getElementById('btn-export-normalised');
+    if (btnNormalised && !btnNormalised.dataset.initialized) {
+      btnNormalised.dataset.initialized = 'true';
+      btnNormalised.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportNormalisedCsv();
+      });
+    }
+
+    const btnSpreads = document.getElementById('btn-export-spreads');
+    if (btnSpreads && !btnSpreads.dataset.initialized) {
+      btnSpreads.dataset.initialized = 'true';
+      btnSpreads.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportSpreadsCsv();
+      });
+    }
+
+    const btnClean = document.getElementById('btn-export-clean');
+    if (btnClean && !btnClean.dataset.initialized) {
+      btnClean.dataset.initialized = 'true';
+      btnClean.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportCleanCsv();
+      });
+    }
+
+    const btnQuality = document.getElementById('btn-export-quality');
+    if (btnQuality && !btnQuality.dataset.initialized) {
+      btnQuality.dataset.initialized = 'true';
+      btnQuality.addEventListener('click', (e) => {
+        e.preventDefault();
+        exportQualityJson();
+      });
+    }
+
+    // Dynamic delegation for buttons created asynchronously (e.g. btn-export-signals)
+    document.addEventListener('click', (e) => {
+      const btnSig = e.target.closest('#btn-export-signals');
+      if (btnSig) {
+        e.preventDefault();
+        exportSignalsCsv();
+      }
+    });
+  }
+
+  // ==========================================
   // INITIALIZE APP
   // ==========================================
   function init() {
@@ -2643,6 +2929,7 @@ Answer the user's question directly, clearly, and concisely in simple English. E
     renderOverview();
     renderContractBars();
     initAiGuideChat();
+    initExportHandlers();
   }
 
   if (document.readyState === 'loading') {

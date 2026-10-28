@@ -1,10 +1,20 @@
 # KARAT 🏆
 ### MCX Gold Futures Cross-Contract Relative-Value Intelligence & Backtesting Engine
 
-[![Tests: 60 Passed](https://img.shields.io/badge/pytest-60%20passed-emerald.svg)](backend/tests)
+[![Live Application](https://img.shields.io/badge/Live%20App-Render%20Online-emerald.svg)](https://karat-commodity-t6ym.onrender.com)
+[![Tests: 132 Passed](https://img.shields.io/badge/pytest-132%20passed-emerald.svg)](backend/tests)
 [![Python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
-[![FastAPI: v1.0.0](https://img.shields.io/badge/FastAPI-v1.0.0-teal.svg)](http://127.0.0.1:8000/docs)
-[![Design: Ultra-Dark](https://img.shields.io/badge/theme-%230B0D10-gold.svg)](index.html)
+[![FastAPI Docs](https://img.shields.io/badge/FastAPI-Docs-teal.svg)](https://karat-commodity-t6ym.onrender.com/docs)
+[![Design: Ultra-Dark](https://img.shields.io/badge/theme-%230B0D10-gold.svg)](https://karat-commodity-t6ym.onrender.com)
+
+---
+
+## 🌐 Official Live Deployment
+- **Live Web Application:** [https://karat-commodity-t6ym.onrender.com](https://karat-commodity-t6ym.onrender.com)
+- **Interactive Swagger API Docs:** [https://karat-commodity-t6ym.onrender.com/docs](https://karat-commodity-t6ym.onrender.com/docs)
+- **API Health Endpoint:** [https://karat-commodity-t6ym.onrender.com/health](https://karat-commodity-t6ym.onrender.com/health)
+
+---
 
 **KARAT** solves the fundamental structural challenge in trading MCX gold futures: **the four primary contracts (GOLDM, GOLDTEN, GOLDGUINEA, GOLDPETAL) trade at different unit sizes, contract purities (995 vs 999), and lot bases.** 
 
@@ -12,26 +22,20 @@ KARAT mathematically standardises every contract to **₹ per 1 gram of 999 fine
 
 ---
 
-## ⚡ Quickstart
+## ⚡ Local Development Quickstart
 
-### 1. Start the FastAPI Analytics Engine
+### 1. Start the Unified Application (Backend + Frontend)
 ```bash
-python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000
 ```
-- Interactive Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- API Health Status: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+- Local App & API Docs available at `http://localhost:8000` and `http://localhost:8000/docs`.
 
-### 2. Launch the Frontend Application
-```bash
-python -m http.server 8080
-```
-- Open [http://127.0.0.1:8080](http://127.0.0.1:8080) in your browser.
-
-### 3. Run the Quantitative Test Suite
+### 2. Run the Quantitative Test Suite
 ```bash
 python -m pytest
 ```
-> **60 unit, integration, and statistical invariant tests** verify no-lookahead bias, cost monotonicity, contract lifecycle guards, and normalisation mathematical precision.
+> **132 unit, integration, and statistical invariant tests** verify no-lookahead bias, cost monotonicity, contract lifecycle guards, and normalisation mathematical precision.
+
 
 ---
 

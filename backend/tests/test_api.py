@@ -135,6 +135,11 @@ class TestApiEndpoints:
         assert "entry_date" in header
         assert "exit_date" in header
         assert "gross_pnl_bps" in header
+        assert "net_pnl_rs" in header
+
+        # Test period parameter
+        resp_build = client.get("/export/trades.csv?period=build")
+        assert resp_build.status_code == 200
 
     def test_export_signals_csv(self):
         resp = client.get("/export/signals.csv")
@@ -161,6 +166,17 @@ class TestApiEndpoints:
         header = next(reader)
         assert "spread_rupees" in header
         assert "z_score" in header
+
+    def test_export_clean_csv(self):
+        resp = client.get("/export/clean.csv")
+        assert resp.status_code == 200
+        assert "text/csv" in resp.headers["content-type"]
+
+    def test_export_quality_json(self):
+        resp = client.get("/export/quality.json")
+        assert resp.status_code == 200
+        assert "application/json" in resp.headers["content-type"]
+
 
     def test_all_endpoints_carry_data_status_and_source(self):
         """Step 1 Requirement: Every response carries data_status, last_verified_trading_date, and data_source."""

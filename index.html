@@ -459,10 +459,10 @@
 
             <!-- Export Trades Button -->
             <div>
-              <a href="http://127.0.0.1:8000/export/trades.csv" download="karat_trades.csv" class="surface-chip inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-mono hover:text-ink-1 transition-colors">
-                <iconify-icon icon="lucide:download"></iconify-icon>
-                <span>Export Trades CSV</span>
-              </a>
+              <button id="btn-export-trades" type="button" class="surface-chip inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-mono hover:text-ink-1 hover:border-gold-400/40 transition-colors cursor-pointer">
+                <iconify-icon icon="lucide:download" class="text-gold-400"></iconify-icon>
+                <span id="label-export-trades">Export Trades CSV</span>
+              </button>
             </div>
           </div>
 
@@ -629,14 +629,25 @@
           <div class="gl-card p-5 flex items-center justify-between flex-wrap gap-4">
             <div>
               <h4 class="text-xs font-bold uppercase tracking-wider text-ink-1">Export Raw Audit Files</h4>
+              <p class="text-xs text-ink-3 mt-0.5">Download reproducible pipeline datasets, clean bhavcopies, and audit logs.</p>
             </div>
-            <div class="flex items-center gap-3">
-              <a href="http://127.0.0.1:8000/export/normalised.csv" download="normalised_gold_prices.csv" class="px-3 py-1.5 rounded-lg bg-bg-1 hover:bg-[#1E242C] border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 transition-colors">
-                Normalised Prices CSV
-              </a>
-              <a href="http://127.0.0.1:8000/export/spreads.csv" download="karat_spreads.csv" class="px-3 py-1.5 rounded-lg bg-bg-1 hover:bg-[#1E242C] border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 transition-colors">
-                Spreads CSV
-              </a>
+            <div class="flex items-center flex-wrap gap-3">
+              <button id="btn-export-clean" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                <iconify-icon icon="lucide:file-spreadsheet" class="text-gold-400"></iconify-icon>
+                <span>Clean Bhavcopy CSV</span>
+              </button>
+              <button id="btn-export-normalised" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                <iconify-icon icon="lucide:scale" class="text-gold-400"></iconify-icon>
+                <span>Normalised Prices CSV</span>
+              </button>
+              <button id="btn-export-spreads" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                <iconify-icon icon="lucide:activity" class="text-gold-400"></iconify-icon>
+                <span id="label-export-spreads">Spreads CSV</span>
+              </button>
+              <button id="btn-export-quality" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                <iconify-icon icon="lucide:shield-check" class="text-gold-400"></iconify-icon>
+                <span>Quality Report JSON</span>
+              </button>
             </div>
           </div>
         </section>
