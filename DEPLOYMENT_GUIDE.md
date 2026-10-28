@@ -1,8 +1,8 @@
 # KARAT — Production Deployment Guide
 
-## 🌐 Official Live Production Deployment
+## Official Live Production Deployment
 The live instance of **KARAT** is deployed and running at:
-👉 **[https://karat-commodity-t6ym.onrender.com](https://karat-commodity-t6ym.onrender.com)**
+**[https://karat-commodity-t6ym.onrender.com](https://karat-commodity-t6ym.onrender.com)**
 
 - **Interactive API Documentation:** [https://karat-commodity-t6ym.onrender.com/docs](https://karat-commodity-t6ym.onrender.com/docs)
 - **API Health Check:** [https://karat-commodity-t6ym.onrender.com/health](https://karat-commodity-t6ym.onrender.com/health)
@@ -11,7 +11,7 @@ Because the FastAPI backend (`backend/api/main.py`) mounts and serves the static
 
 ---
 
-## 🚀 Live Hosting Configuration (Render.com)
+## Live Hosting Configuration (Render.com)
 
 The application is deployed on Render via GitHub CI/CD:
 
@@ -26,7 +26,7 @@ Whenever commits are pushed to `origin/main`, Render automatically triggers a ne
 
 ---
 
-## 💻 Local Testing & Development
+## Local Testing & Development
 
 To test locally with the exact same production settings:
 
@@ -40,7 +40,7 @@ python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000
 
 ---
 
-## ✅ Deployment Verification Checklist
+## Deployment Verification Checklist
 
 After deployment, verify that:
 - [x] Visiting `/` renders the 3D stage and allows entering the dashboard.

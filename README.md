@@ -1,4 +1,4 @@
-# KARAT 🏆
+# KARAT
 ### MCX Gold Futures Cross-Contract Relative-Value Intelligence & Backtesting Engine
 
 [![Live Application](https://img.shields.io/badge/Live%20App-Render%20Online-emerald.svg)](https://karat-commodity-t6ym.onrender.com)
@@ -9,7 +9,7 @@
 
 ---
 
-## 🌐 Official Live Deployment
+## Official Live Deployment
 - **Live Web Application:** [https://karat-commodity-t6ym.onrender.com](https://karat-commodity-t6ym.onrender.com)
 
 ---
@@ -20,7 +20,7 @@ KARAT mathematically standardises every contract to **₹ per 1 gram of 999 fine
 
 ---
 
-## ⚡ Local Development Quickstart
+## Local Development Quickstart
 
 ### 1. Start the Unified Application (Backend + Frontend)
 ```bash
@@ -37,7 +37,7 @@ python -m pytest
 
 ---
 
-## 📐 Mathematical Framework & Normalisation
+## Mathematical Framework & Normalisation
 
 MCX lists four distinct gold futures contracts:
 
