@@ -776,7 +776,10 @@ STATIC_DIR = Path(__file__).resolve().parent.parent.parent
 
 @app.get("/", response_class=FileResponse)
 def serve_root():
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(
+        STATIC_DIR / "index.html",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
 
 
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
