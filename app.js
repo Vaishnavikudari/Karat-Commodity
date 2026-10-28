@@ -1218,10 +1218,10 @@
             </div>
           </div>
           <div class="flex items-center gap-2.5">
-            <button id="btn-export-signals" type="button" class="surface-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors cursor-pointer">
+            <a id="btn-export-signals" href="${API_BASE}/export/signals.csv" download="karat_active_signals.csv" class="surface-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors cursor-pointer">
               <iconify-icon icon="lucide:download" class="text-gold-400"></iconify-icon>
               <span>Export Signals CSV</span>
-            </button>
+            </a>
             <div class="font-mono text-xs sm:text-sm px-3.5 py-1.5 rounded-lg ${isQuiet ? 'bg-slate-800 text-slate-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
               ${isQuiet ? 'No opportunity right now' : `${activeList.length} opportunity right now`}
             </div>
@@ -1331,6 +1331,7 @@
 
     selector.addEventListener('change', (e) => {
       state.selectedPair = e.target.value;
+      if (typeof updateExportLinks === 'function') updateExportLinks();
       loadSpreadData();
     });
   }
@@ -1746,6 +1747,7 @@
       costSlider.addEventListener('input', (e) => {
         state.costBps = parseFloat(e.target.value);
         if (costDisplay) costDisplay.textContent = `${state.costBps.toFixed(1)} bps/leg`;
+        if (typeof updateExportLinks === 'function') updateExportLinks();
       });
       costSlider.addEventListener('change', () => loadBacktestData());
     }
@@ -1758,6 +1760,7 @@
         toggleBuild.classList.remove('bg-slate-800', 'text-slate-400');
         toggleUnseen.classList.remove('bg-amber-500/20', 'text-amber-300', 'border-amber-500/40');
         toggleUnseen.classList.add('bg-slate-800', 'text-slate-400');
+        if (typeof updateExportLinks === 'function') updateExportLinks();
         loadBacktestData();
       });
 
@@ -1767,6 +1770,7 @@
         toggleUnseen.classList.remove('bg-slate-800', 'text-slate-400');
         toggleBuild.classList.remove('bg-amber-500/20', 'text-amber-300', 'border-amber-500/40');
         toggleBuild.classList.add('bg-slate-800', 'text-slate-400');
+        if (typeof updateExportLinks === 'function') updateExportLinks();
         loadBacktestData();
       });
     }
@@ -2863,58 +2867,97 @@ Answer the user's question directly, clearly, and concisely in simple English. E
     }
   }
 
-  function initExportHandlers() {
-    const btnTrades = document.getElementById('btn-export-trades');
-    if (btnTrades && !btnTrades.dataset.initialized) {
-      btnTrades.dataset.initialized = 'true';
-      btnTrades.addEventListener('click', (e) => {
-        e.preventDefault();
-        exportTradesCsv();
-      });
-    }
+  function updateExportLinks() {
+    const [symA, symB] = state.selectedPair ? state.selectedPair.split('_') : ['GOLDM', 'GOLDTEN'];
+    const period = state.backtestPeriod || 'all';
+    const cost = state.costBps != null ? state.costBps : 2.5;
 
-    const btnNormalised = document.getElementById('btn-export-normalised');
-    if (btnNormalised && !btnNormalised.dataset.initialized) {
-      btnNormalised.dataset.initialized = 'true';
-      btnNormalised.addEventListener('click', (e) => {
-        e.preventDefault();
-        exportNormalisedCsv();
-      });
+    const btnTrades = document.getElementById('btn-export-trades');
+    if (btnTrades) {
+      btnTrades.href = `${API_BASE}/export/trades.csv?symbol_a=${symA}&symbol_b=${symB}&cost_per_leg_bps=${cost}&period=${period}`;
+      btnTrades.setAttribute('download', `karat_${symA}_${symB}_${period}_trades.csv`);
+      const lblTrades = document.getElementById('label-export-trades');
+      if (lblTrades) {
+        lblTrades.textContent = `Export Trades CSV (${period.toUpperCase()})`;
+      }
     }
 
     const btnSpreads = document.getElementById('btn-export-spreads');
-    if (btnSpreads && !btnSpreads.dataset.initialized) {
-      btnSpreads.dataset.initialized = 'true';
-      btnSpreads.addEventListener('click', (e) => {
-        e.preventDefault();
-        exportSpreadsCsv();
-      });
+    if (btnSpreads) {
+      const pair = state.selectedPair || 'GOLDM_GOLDTEN';
+      btnSpreads.href = `${API_BASE}/export/spreads.csv?pair=${encodeURIComponent(pair)}`;
+      btnSpreads.setAttribute('download', `karat_${pair}_spreads.csv`);
+      const lblSpreads = document.getElementById('label-export-spreads');
+      if (lblSpreads) {
+        lblSpreads.textContent = `Spreads CSV (${pair})`;
+      }
+    }
+
+    const btnNormalised = document.getElementById('btn-export-normalised');
+    if (btnNormalised) {
+      btnNormalised.href = `${API_BASE}/export/normalised.csv`;
+      btnNormalised.setAttribute('download', 'karat_normalised_gold_prices.csv');
     }
 
     const btnClean = document.getElementById('btn-export-clean');
-    if (btnClean && !btnClean.dataset.initialized) {
-      btnClean.dataset.initialized = 'true';
-      btnClean.addEventListener('click', (e) => {
-        e.preventDefault();
-        exportCleanCsv();
-      });
+    if (btnClean) {
+      btnClean.href = `${API_BASE}/export/clean.csv`;
+      btnClean.setAttribute('download', 'karat_clean_bhavcopy.csv');
     }
 
     const btnQuality = document.getElementById('btn-export-quality');
-    if (btnQuality && !btnQuality.dataset.initialized) {
-      btnQuality.dataset.initialized = 'true';
-      btnQuality.addEventListener('click', (e) => {
-        e.preventDefault();
-        exportQualityJson();
-      });
+    if (btnQuality) {
+      btnQuality.href = `${API_BASE}/export/quality.json`;
+      btnQuality.setAttribute('download', 'karat_quality_report.json');
     }
+
+    const btnSignals = document.getElementById('btn-export-signals');
+    if (btnSignals) {
+      btnSignals.href = `${API_BASE}/export/signals.csv`;
+      btnSignals.setAttribute('download', 'karat_active_signals.csv');
+    }
+  }
+
+  function initExportHandlers() {
+    updateExportLinks();
+
+    const exportMap = [
+      { id: 'btn-export-trades', label: 'Trades CSV', fallback: exportTradesCsv },
+      { id: 'btn-export-normalised', label: 'Normalised CSV', fallback: exportNormalisedCsv },
+      { id: 'btn-export-spreads', label: 'Spreads CSV', fallback: exportSpreadsCsv },
+      { id: 'btn-export-clean', label: 'Clean Bhavcopy CSV', fallback: exportCleanCsv },
+      { id: 'btn-export-quality', label: 'Quality JSON', fallback: exportQualityJson }
+    ];
+
+    exportMap.forEach(({ id, label, fallback }) => {
+      const el = document.getElementById(id);
+      if (el && !el.dataset.initialized) {
+        el.dataset.initialized = 'true';
+        el.addEventListener('click', (e) => {
+          updateExportLinks();
+          if (window.location.protocol === 'file:') {
+            e.preventDefault();
+            fallback();
+          } else {
+            const orig = el.innerHTML;
+            updateExportButtonFeedback(el, orig, `Downloaded ${label}`);
+          }
+        });
+      }
+    });
 
     // Dynamic delegation for buttons created asynchronously (e.g. btn-export-signals)
     document.addEventListener('click', (e) => {
       const btnSig = e.target.closest('#btn-export-signals');
       if (btnSig) {
-        e.preventDefault();
-        exportSignalsCsv();
+        updateExportLinks();
+        if (window.location.protocol === 'file:') {
+          e.preventDefault();
+          exportSignalsCsv();
+        } else {
+          const orig = btnSig.innerHTML;
+          updateExportButtonFeedback(btnSig, orig, 'Downloaded Signals CSV');
+        }
       }
     });
   }

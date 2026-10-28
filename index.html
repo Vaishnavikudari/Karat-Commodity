@@ -459,10 +459,10 @@
 
             <!-- Export Trades Button -->
             <div>
-              <button id="btn-export-trades" type="button" class="surface-chip inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-mono hover:text-ink-1 hover:border-gold-400/40 transition-colors cursor-pointer">
+              <a id="btn-export-trades" href="/export/trades.csv?period=all" download="karat_trades.csv" class="surface-chip inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-mono hover:text-ink-1 hover:border-gold-400/40 transition-colors cursor-pointer">
                 <iconify-icon icon="lucide:download" class="text-gold-400"></iconify-icon>
                 <span id="label-export-trades">Export Trades CSV</span>
-              </button>
+              </a>
             </div>
           </div>
 
@@ -632,22 +632,22 @@
               <p class="text-xs text-ink-3 mt-0.5">Download reproducible pipeline datasets, clean bhavcopies, and audit logs.</p>
             </div>
             <div class="flex items-center flex-wrap gap-3">
-              <button id="btn-export-clean" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+              <a id="btn-export-clean" href="/export/clean.csv" download="karat_clean_bhavcopy.csv" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                 <iconify-icon icon="lucide:file-spreadsheet" class="text-gold-400"></iconify-icon>
                 <span>Clean Bhavcopy CSV</span>
-              </button>
-              <button id="btn-export-normalised" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+              </a>
+              <a id="btn-export-normalised" href="/export/normalised.csv" download="karat_normalised_gold_prices.csv" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                 <iconify-icon icon="lucide:scale" class="text-gold-400"></iconify-icon>
                 <span>Normalised Prices CSV</span>
-              </button>
-              <button id="btn-export-spreads" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+              </a>
+              <a id="btn-export-spreads" href="/export/spreads.csv?pair=GOLDM_GOLDTEN" download="karat_spreads.csv" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                 <iconify-icon icon="lucide:activity" class="text-gold-400"></iconify-icon>
                 <span id="label-export-spreads">Spreads CSV</span>
-              </button>
-              <button id="btn-export-quality" type="button" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+              </a>
+              <a id="btn-export-quality" href="/export/quality.json" download="karat_quality_report.json" class="surface-chip px-3 py-1.5 rounded-lg border border-line-1 text-xs font-mono text-ink-2 hover:text-ink-1 hover:border-gold-400/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                 <iconify-icon icon="lucide:shield-check" class="text-gold-400"></iconify-icon>
                 <span>Quality Report JSON</span>
-              </button>
+              </a>
             </div>
           </div>
         </section>
