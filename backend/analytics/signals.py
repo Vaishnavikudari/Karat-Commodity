@@ -78,21 +78,20 @@ def evaluate_pair_signal(
     thin = bool(latest["thin_day"])
     rt_cost_bps = estimate_round_trip_cost(cost_per_leg_bps, thin)
 
-    # Base opportunity qualification:
-    # 1. Z-score breach
+
     z_breach = abs(z) >= entry_z
-    # 2. Economic edge after round-trip transaction costs
-    # Net edge expectation is approximately reverting from current z to exit_z
+
+
     expected_reversion_bps = abs(spread_bps) * (1.0 - (EXIT_Z / max(abs(z), 0.001))) if abs(z) > EXIT_Z else 0.0
     net_edge_bps = expected_reversion_bps - rt_cost_bps
     is_cost_viable = net_edge_bps > 0.0
 
-    # 3. Liquidity constraint
+
     vol_a, vol_b = int(latest["vol_a"]), int(latest["vol_b"])
     oi_a, oi_b = int(latest["oi_a"]), int(latest["oi_b"])
     liq_pass = (vol_a > 0 and vol_b > 0) and (oi_a >= 10 and oi_b >= 10)
 
-    # 4. Expiry / roll check
+
     today_date = latest["date"]
     exp_a_str = latest.get("expiry_a")
     exp_b_str = latest.get("expiry_b")
@@ -115,7 +114,7 @@ def evaluate_pair_signal(
 
     has_signal = z_breach and is_cost_viable and liq_pass and not roll_risk
 
-    # Interpretation
+
     if z > 0:
         rich_contract = symbol_a
         cheap_contract = symbol_b

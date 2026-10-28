@@ -69,7 +69,7 @@ def get_term_structure(
                 near_norm = norm_price
                 near_expiry = exp_date
 
-            # Carry calculation: annualized cost of carry vs nearest contract
+
             if near_norm and days_to_expiry > 0 and exp_date != near_expiry:
                 cal_days = (exp_date - near_expiry).days
                 if cal_days > 0:
@@ -123,7 +123,7 @@ def compute_historical_curve_regimes(
         return []
 
     regimes: list[dict[str, Any]] = []
-    # Sort dates chronologically
+
     dates = sorted(sub["Date"].unique())
 
     for d in dates:

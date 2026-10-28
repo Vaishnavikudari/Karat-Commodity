@@ -42,9 +42,6 @@ from backend.config import (
 
 logger = logging.getLogger(__name__)
 
-# ──────────────────────────────────────────────────────────────────────
-# Public API
-# ──────────────────────────────────────────────────────────────────────
 
 def download_range(
     start: dt.date,
@@ -81,7 +78,7 @@ def download_range(
     while current <= end:
         summary["requested"] += 1
 
-        # Skip weekends (Saturday=5, Sunday=6)
+
         if current.weekday() >= 5:
             summary["skipped_weekend"] += 1
             current += dt.timedelta(days=1)
@@ -110,7 +107,7 @@ def download_range(
                 {"date": str(current), "reason": f"date_mismatch: {exc}"}
             )
             logger.warning("Date mismatch for %s: %s", current, exc)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             summary["errors"].append(
                 {"date": str(current), "reason": str(exc)}
             )
@@ -120,10 +117,6 @@ def download_range(
 
     return summary
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Internals
-# ──────────────────────────────────────────────────────────────────────
 
 class DateMismatchError(Exception):
     """MCX returned data for a date other than the one we requested."""
@@ -145,7 +138,7 @@ def _fetch_one_day(
     Returns a list of row dicts or None if empty.
     Raises DateMismatchError if the returned date ≠ requested date.
     """
-    request_date_str = date.strftime("%d/%m/%Y")  # DD/MM/YYYY
+    request_date_str = date.strftime("%d/%m/%Y")
 
     payload = {"Date": request_date_str, "InstrumentName": "FUTCOM"}
     headers = {
@@ -182,7 +175,7 @@ def _fetch_one_day(
             f"All {MCX_MAX_RETRIES} attempts failed for {date}: {last_exc}"
         )
 
-    time.sleep(rate_limit)  # polite rate limiting
+    time.sleep(rate_limit)
 
     body = resp.json()
     raw_data = body.get("d", body) if isinstance(body, dict) else body
@@ -190,7 +183,7 @@ def _fetch_one_day(
     if not raw_data:
         return None
 
-    # Parse – handle list-of-dicts or CSV text
+
     if isinstance(raw_data, str):
         rows = list(csv.DictReader(io.StringIO(raw_data)))
     elif isinstance(raw_data, list):
@@ -199,13 +192,13 @@ def _fetch_one_day(
         logger.warning("Unexpected response type for %s: %s", date, type(raw_data))
         return None
 
-    # Filter to gold contracts only
+
     gold_rows: list[dict[str, str]] = []
     for row in rows:
         symbol = (row.get("Symbol") or row.get("symbol") or "").strip()
         if symbol in TRACKED_SYMBOLS:
             row_clean = {k.strip(): str(v).strip() for k, v in row.items()}
-            # DATE VALIDATION: MCX response date is MM/DD/YYYY
+
             resp_date_str = row_clean.get("Date") or row_clean.get("date") or ""
             resp_date = _parse_response_date(resp_date_str)
             if resp_date and resp_date != date:

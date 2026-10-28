@@ -32,10 +32,6 @@ def clean_data():
     return df
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 1. SPREAD LAB: ZERO LOOK-AHEAD BIAS REGRESSION TEST
-# ──────────────────────────────────────────────────────────────────────
-
 def test_spread_lab_zero_lookahead_regression(clean_data):
     """
     Day t's rolling mean and std must depend solely on observations from days prior to t (shift(1)).
@@ -45,11 +41,11 @@ def test_spread_lab_zero_lookahead_regression(clean_data):
     res = compute_spread_series(clean_data, "GOLDM", "GOLDTEN", window=window)
     assert len(res) > window + 5, "Need sufficient rows for window"
 
-    # Select day t (e.g. index 25)
+
     t_idx = 25
     orig_z = res.iloc[t_idx]["z_score"]
 
-    # Calculate expected rolling mean and std using strictly indices [t_idx - window : t_idx]
+
     prior_spreads = res["spread_bps"].iloc[t_idx - window : t_idx]
     expected_mean = prior_spreads.mean()
     expected_std = prior_spreads.std()
@@ -58,8 +54,7 @@ def test_spread_lab_zero_lookahead_regression(clean_data):
     expected_z = round((curr_spread - expected_mean) / expected_std, 4)
     assert orig_z == pytest.approx(expected_z, abs=1e-4)
 
-    # Invariance check: Modifying day t's own spread by +1000 bps should NOT change day t's rolling mean or std
-    # We test that rolling statistics are shifted by 1
+
     shifted_series = res["spread_bps"].shift(1)
     rolling_m = shifted_series.rolling(window=window, min_periods=window).mean()
     rolling_s = shifted_series.rolling(window=window, min_periods=window).std()
@@ -67,10 +62,6 @@ def test_spread_lab_zero_lookahead_regression(clean_data):
     assert rolling_m.iloc[t_idx] == pytest.approx(expected_mean, abs=1e-6)
     assert rolling_s.iloc[t_idx] == pytest.approx(expected_std, abs=1e-6)
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 2. DAILY BRIEFING: SETTLEMENT PRICE VS DAILY CHANGE SEPARATION
-# ──────────────────────────────────────────────────────────────────────
 
 def test_daily_briefing_settle_vs_change_separation(clean_data):
     """
@@ -83,24 +74,19 @@ def test_daily_briefing_settle_vs_change_separation(clean_data):
     assert "template_summary" in briefing
 
     summary_text = briefing["template_summary"]
-    # The summary text must state settled at a positive level and report change separately
+
     assert "settled at ₹" in summary_text
     assert "change)" in summary_text
 
-    # Extract parsed numbers from text
-    # e.g., "On 2026-10-14, GOLDTEN settled at ₹14,506.20/g (-₹33.50/g, -0.23% change)."
+
     assert "settled at -₹" not in summary_text, "Settlement price must not be negative daily change"
 
-    # Verify contracts detail structure in price_changes
+
     for c in briefing.get("price_changes", []):
         assert c["norm_close"] > 10000.0, "Settlement price must be actual positive mark"
         assert isinstance(c["change_rs_per_g"], (int, float))
         assert isinstance(c["pct_change"], (int, float))
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 3. BACKTESTER: RUPEE GROSS AND NET P&L WITH CONTRACT QUANTITIES
-# ──────────────────────────────────────────────────────────────────────
 
 def test_backtest_rupee_pnl_both_legs_and_multipliers(clean_data):
     """
@@ -116,7 +102,7 @@ def test_backtest_rupee_pnl_both_legs_and_multipliers(clean_data):
     metrics = unseen["metrics"]
     trades = unseen["trades"]
 
-    # Verify rupee metrics are present in summary
+
     assert "gross_pnl_rs" in metrics
     assert "net_pnl_rs" in metrics
     assert "total_cost_rs" in metrics
@@ -124,7 +110,7 @@ def test_backtest_rupee_pnl_both_legs_and_multipliers(clean_data):
 
     if len(trades) > 0:
         t = trades[0]
-        # Verify per-leg and rupee fields in each trade
+
         assert "pnl_leg_a_rs" in t
         assert "pnl_leg_b_rs" in t
         assert "gross_pnl_rs" in t
@@ -133,20 +119,16 @@ def test_backtest_rupee_pnl_both_legs_and_multipliers(clean_data):
         assert "lots_a" in t
         assert "lots_b" in t
 
-        # GOLDM is 100g per lot, GOLDTEN is 10g per lot -> at 100g base: 1 lot A, 10 lots B
+
         assert t["lots_a"] == 1
         assert t["lots_b"] == 10
         assert t["grams_a"] == 100.0
         assert t["grams_b"] == 100.0
 
-        # Mathematical consistency
+
         assert t["gross_pnl_rs"] == pytest.approx(t["pnl_leg_a_rs"] + t["pnl_leg_b_rs"], abs=0.05)
         assert t["net_pnl_rs"] == pytest.approx(t["gross_pnl_rs"] - t["cost_rs"], abs=0.05)
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 4. BEST-FIT RANKING: ACCOUNT FOR EXECUTION FRICTION WITHOUT BIAS
-# ──────────────────────────────────────────────────────────────────────
 
 def test_best_fit_ranking_accounts_for_friction_not_automatically_favoring_goldten(clean_data):
     """
@@ -160,13 +142,12 @@ def test_best_fit_ranking_accounts_for_friction_not_automatically_favoring_goldt
     ranked = best_fit["ranked_candidates"]
     assert len(ranked) >= 2
 
-    # Check that effective_score and total_lots are present in candidates
+
     for c in ranked:
         assert "effective_score" in c
         assert "total_lots" in c
 
-    # When quantity is 100g, 1 lot of GOLDM has 1 lot friction (0 bps extra),
-    # whereas 10 lots of GOLDTEN has 9 * 0.5 = 4.5 bps execution friction penalty.
+
     goldm_cand = next((c for c in ranked if c["id"] == "GOLDM"), None)
     goldten_cand = next((c for c in ranked if c["id"] == "GOLDTEN"), None)
 
@@ -175,7 +156,7 @@ def test_best_fit_ranking_accounts_for_friction_not_automatically_favoring_goldt
     assert goldm_cand["total_lots"] == 1
     assert goldten_cand["total_lots"] == 10
 
-    # GOLDM should beat GOLDTEN for 100g allocation
+
     assert best_fit["best_fit_id"] == "GOLDM", "1 lot of GOLDM should be chosen over 10 lots of GOLDTEN for 100g"
 
 
@@ -185,10 +166,6 @@ def test_best_fit_ranking_10g_chooses_goldten(clean_data):
     best_fit = matcher["best_fit"]
     assert best_fit["best_fit_id"] == "GOLDTEN"
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 5. BUILD / UNSEEN BOUNDARY AND ANTI-OVERFITTING GUARDS
-# ──────────────────────────────────────────────────────────────────────
 
 def test_build_unseen_boundary_handling(clean_data):
     """
@@ -204,17 +181,13 @@ def test_build_unseen_boundary_handling(clean_data):
     assert build_period["days"] > 0
     assert unseen_period["days"] > 0
 
-    # Strict temporal ordering
+
     assert build_period["end"] < unseen_period["start"], "Build end date must precede unseen start date"
 
-    # Anti-overfitting guard
+
     with pytest.raises(PermissionError):
         tune_parameters_on_build(clean_data, test_set_access_attempt=True)
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 6. OPPORTUNITY CARD FOUR CONDITIONS VALIDATION
-# ──────────────────────────────────────────────────────────────────────
 
 def test_opportunity_card_four_conditions_validation(clean_data):
     """
@@ -233,20 +206,16 @@ def test_opportunity_card_four_conditions_validation(clean_data):
     assert "is_liquid" in checks
     assert "is_expiry_safe" in checks
 
-    # Verify each boolean flag matches its exact analytical definition
+
     assert checks["is_gap_unusual"] == (abs(sig["z_score"]) >= 2.0)
     assert checks["is_cost_viable"] == (sig["expected_net_edge_bps"] > 0.0)
     assert checks["is_liquid"] == (sig["volume_a"] > 0 and sig["volume_b"] > 0 and sig["oi_a"] >= 10 and sig["oi_b"] >= 10)
     assert checks["is_expiry_safe"] == (sig["days_to_expiry_a"] > 3 and sig["days_to_expiry_b"] > 3)
 
-    # Opportunity is True ONLY if all 4 checks pass
+
     all_passed = all(checks.values())
     assert sig["has_signal"] == all_passed, "has_signal must be strictly conjunction of all four checks"
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 7. FINANCIAL INVARIANT: ZERO LOOKAHEAD PERTURBATION & TRUNCATION
-# ──────────────────────────────────────────────────────────────────────
 
 def test_invariant_zero_lookahead_perturbation_and_truncation(clean_data):
     """
@@ -262,12 +231,12 @@ def test_invariant_zero_lookahead_perturbation_and_truncation(clean_data):
     test_idx = 35
     test_date = base_res.iloc[test_idx]["date"]
 
-    # Calculate baseline rolling stats before mutation
+
     shifted_base = base_res["spread_bps"].shift(1)
     base_mean = shifted_base.rolling(window=window, min_periods=window).mean().iloc[test_idx]
     base_std = shifted_base.rolling(window=window, min_periods=window).std().iloc[test_idx]
 
-    # Create mutated dataset where date t's Close price has an extreme perturbation
+
     mutated_data = clean_data.copy()
     mask = (mutated_data["Date"] == test_date) & (mutated_data["Symbol"] == "GOLDM")
     mutated_data.loc[mask, "Close"] = mutated_data.loc[mask, "Close"] + 50000.0
@@ -277,19 +246,15 @@ def test_invariant_zero_lookahead_perturbation_and_truncation(clean_data):
     mut_mean = shifted_mut.rolling(window=window, min_periods=window).mean().iloc[test_idx]
     mut_std = shifted_mut.rolling(window=window, min_periods=window).std().iloc[test_idx]
 
-    # Invariant: Mean and Std on date t MUST be strictly invariant to date t's price shock
+
     assert base_mean == pytest.approx(mut_mean, abs=1e-6), "Rolling mean leaked contemporaneous date t price"
     assert base_std == pytest.approx(mut_std, abs=1e-6), "Rolling std leaked contemporaneous date t price"
 
-    # Truncation Invariant: Truncating future rows after date t must produce identical Z-score on date t
+
     truncated_data = clean_data[clean_data["Date"] <= test_date].copy()
     trunc_res = compute_spread_series(truncated_data, "GOLDM", "GOLDTEN", window=window)
     assert trunc_res.iloc[-1]["z_score"] == pytest.approx(base_res.iloc[test_idx]["z_score"], abs=1e-4)
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 8. FINANCIAL INVARIANT: PAIRS TRADING P&L CONSERVATION & COST SCALING
-# ──────────────────────────────────────────────────────────────────────
 
 def test_invariant_pnl_conservation_across_all_pairs_and_trades(clean_data):
     """
@@ -319,37 +284,33 @@ def test_invariant_pnl_conservation_across_all_pairs_and_trades(clean_data):
             trade_cost_sum = 0.0
 
             for t in trades:
-                # Invariant 1: Additivity of Leg A and Leg B
+
                 expected_gross = t["pnl_leg_a_rs"] + t["pnl_leg_b_rs"]
                 assert t["gross_pnl_rs"] == pytest.approx(expected_gross, abs=0.05)
 
-                # Invariant 2: Net PnL == Gross - Cost
+
                 expected_net = t["gross_pnl_rs"] - t["cost_rs"]
                 assert t["net_pnl_rs"] == pytest.approx(expected_net, abs=0.05)
 
-                # Invariant 3: Positive transaction costs
+
                 assert t["cost_rs"] >= 0.0
 
                 trade_gross_sum += t["gross_pnl_rs"]
                 trade_net_sum += t["net_pnl_rs"]
                 trade_cost_sum += t["cost_rs"]
 
-            # Invariant 4: Aggregate metric summation
+
             assert metrics["gross_pnl_rs"] == pytest.approx(trade_gross_sum, abs=0.5)
             assert metrics["net_pnl_rs"] == pytest.approx(trade_net_sum, abs=0.5)
             assert metrics["total_cost_rs"] == pytest.approx(trade_cost_sum, abs=0.5)
 
-            # Invariant 5: Monotonic cost scaling
+
             high_trades = res_high_cost[mode]["trades"]
             high_metrics = res_high_cost[mode]["metrics"]
             if high_trades:
                 assert high_metrics["total_cost_rs"] > metrics["total_cost_rs"]
                 assert high_metrics["net_pnl_rs"] < metrics["net_pnl_rs"]
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 9. FINANCIAL INVARIANT: BEST-FIT PHYSICAL COVERAGE & ORDER MONOTONICITY
-# ──────────────────────────────────────────────────────────────────────
 
 def test_invariant_best_fit_physical_coverage_sweep(clean_data):
     """
@@ -370,12 +331,12 @@ def test_invariant_best_fit_physical_coverage_sweep(clean_data):
             continue
 
         for c in ranked:
-            # Check candidate properties
+
             assert "effective_score" in c
             assert "total_lots" in c
             assert c["total_lots"] >= 1
 
-        # Check sorting hierarchy invariant: exact matches come before non-exact
+
         exact_seen = True
         for c in ranked:
             if not c["is_exact_match"]:
@@ -383,10 +344,6 @@ def test_invariant_best_fit_physical_coverage_sweep(clean_data):
             else:
                 assert exact_seen is True, "Exact match appeared after non-exact match in ranking"
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 10. FINANCIAL INVARIANT: WALK-FORWARD TEST SET INSULATION
-# ──────────────────────────────────────────────────────────────────────
 
 def test_invariant_walk_forward_insulation_from_future_noise(clean_data):
     """
@@ -397,7 +354,7 @@ def test_invariant_walk_forward_insulation_from_future_noise(clean_data):
     """
     baseline_params = tune_parameters_on_build(clean_data, "GOLDM", "GOLDTEN")
 
-    # Scramble the unseen portion (last 40% of dates)
+
     spread_df = compute_spread_series(clean_data, "GOLDM", "GOLDTEN")
     split_date = spread_df.iloc[int(len(spread_df) * 0.6)]["date"]
 
@@ -405,14 +362,10 @@ def test_invariant_walk_forward_insulation_from_future_noise(clean_data):
     unseen_mask = corrupted_data["Date"] >= split_date
     corrupted_data.loc[unseen_mask, "Close"] = corrupted_data.loc[unseen_mask, "Close"] * 2.5
 
-    # Tuning must produce the exact same parameters because unseen data is isolated
+
     corrupted_params = tune_parameters_on_build(corrupted_data, "GOLDM", "GOLDTEN")
     assert baseline_params == corrupted_params, "Build tuning was corrupted by changes in Unseen data"
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 11. FINANCIAL INVARIANT: SIGNAL CONJUNCTION ACROSS ALL TRACKED PAIRS
-# ──────────────────────────────────────────────────────────────────────
 
 def test_invariant_signal_conjunction_across_all_pairs(clean_data):
     """

@@ -40,8 +40,7 @@ def compute_single_contract_match(
     quote_base_g = float(spec.quote_base_g)
     purity = int(spec.purity)
 
-    # 1. Lots and coverage maths
-    # Floor integer lots to not overshoot the target quantity; leftover is uncovered remainder
+
     if quantity_g <= 0:
         lots_needed = 0
     else:
@@ -51,15 +50,14 @@ def compute_single_contract_match(
     leftover_grams = round(quantity_g - grams_covered, 4)
     is_exact_match = (leftover_grams == 0.0 and lots_needed > 0) or (quantity_g == 0 and lots_needed == 0)
 
-    # 2. Contract value in Rs
-    # Formula: lots x lot grams x close / quote base
+
     close_price = float(row.get("close", 0.0) or 0.0)
     contract_value_rs = round(lots_needed * lot_size_g * (close_price / quote_base_g), 2)
 
-    # 3. Cost per gram on common scale (norm_close)
+
     norm_close = float(row.get("norm_close", 0.0) or 0.0)
 
-    # 4. Premium vs GOLDTEN of same expiry in bps
+
     premium_vs_goldten_bps: Optional[float] = None
     later_expiry_note: Optional[str] = None
     contract_expiry = str(row.get("expiry_date", "") or "")
@@ -80,7 +78,7 @@ def compute_single_contract_match(
                 "A later expiry carries cost of carry (financing & storage) explaining part of any positive gap."
             )
 
-    # 5. Liquidity & Trading Activity
+
     grams_traded = float(row.get("grams_traded", 0.0) or 0.0)
     oi_lots = int(row.get("oi_lots", 0) or 0)
     volume_lots = int(row.get("volume_lots", 0) or 0)
@@ -90,12 +88,11 @@ def compute_single_contract_match(
     if not no_trade and grams_traded > 0 and grams_covered > 0:
         share_of_day_volume_pct = round((grams_covered / grams_traded) * 100.0, 4)
 
-    # 6. Expiry countdown & near expiry flag
+
     days_to_expiry = int(row.get("days_to_expiry", 0) or 0)
     is_near_expiry = days_to_expiry <= 3
 
-    # 7. 999-equivalent grams detail row
-    # GOLDM is 995 fineness, others are 999
+
     equiv_999_grams = round(grams_covered * (purity / 999.0), 4)
     if purity < 999:
         equiv_999_note = (
@@ -150,8 +147,7 @@ def find_exact_contract_combinations(
     if target <= 0:
         return []
 
-    # Available denominations from contracts
-    # Order: GOLDM (100g), GOLDTEN (10g), GOLDGUINEA (8g), GOLDPETAL (1g)
+
     specs = [
         ("GOLDM", 100),
         ("GOLDTEN", 10),
@@ -159,15 +155,14 @@ def find_exact_contract_combinations(
         ("GOLDPETAL", 1),
     ]
 
-    # Filter to only contracts present in contracts_data
+
     available = [(sym, size) for sym, size in specs if sym in contracts_data]
     if not available:
         return []
 
     valid_solutions: list[dict[str, int]] = []
 
-    # Exact coin-change search with branch & bound to find fewest lots
-    # Max bounds for each denomination
+
     m_size = 100 if any(s == "GOLDM" for s, _ in available) else 0
     t_size = 10 if any(s == "GOLDTEN" for s, _ in available) else 0
     g_size = 8 if any(s == "GOLDGUINEA" for s, _ in available) else 0
@@ -193,14 +188,14 @@ def find_exact_contract_combinations(
                     if sol:
                         valid_solutions.append(sol)
 
-    # Sort solutions by total lots ascending, then diversity
+
     valid_solutions.sort(key=lambda s: (sum(s.values()), len(s)))
 
-    # Select up to max_combinations diverse solutions (prefer distinct primary contract when possible)
+
     selected_solutions: list[dict[str, int]] = []
     seen_signatures = set()
 
-    # Prioritize single-contract pure solutions first if they exist
+
     single_contract_sols = [s for s in valid_solutions if len(s) == 1]
     multi_contract_sols = [s for s in valid_solutions if len(s) > 1]
 
@@ -212,7 +207,7 @@ def find_exact_contract_combinations(
             if len(selected_solutions) >= max_combinations:
                 break
 
-    # Format the combinations into complete analytical objects
+
     results: list[dict[str, Any]] = []
     for idx, sol in enumerate(selected_solutions, start=1):
         total_lots = sum(sol.values())
@@ -281,7 +276,7 @@ def rank_best_fit(
 
     Generates explanation tooltip and caveats for small premium differences or short history.
     """
-    # Identify benchmark expiry if available
+
     benchmark_expiry = next((s.get("expiry_date", "") for s in single_matches if s.get("symbol") == "GOLDTEN"), "")
     candidates: list[dict[str, Any]] = []
 
@@ -318,7 +313,7 @@ def rank_best_fit(
             })
 
     for c in combinations:
-        # Liquidity for a combo is minimum liquidity among components
+
         min_liq = min((c_comp["lots"] * 1000.0) for c_comp in c["components"])
         total_lots = c["total_lots"]
         lot_friction = max(0.0, (total_lots - 1) * 0.5)
@@ -345,11 +340,7 @@ def rank_best_fit(
             "caveat_note": None,
         }
 
-    # Sorting hierarchy:
-    # 1. Exact match (True before False -> 0 for True, 1 for False)
-    # 2. Lowest effective score (carry-adjusted premium + execution friction)
-    # 3. Liquidity descending (higher grams_traded is better)
-    # 4. Total lots ascending (fewer lots to minimize order tickets)
+
     sorted_candidates = sorted(
         candidates,
         key=lambda x: (
@@ -362,7 +353,7 @@ def rank_best_fit(
 
     best = sorted_candidates[0]
 
-    # Check if premium differences are small (< 10 bps) among exact matches
+
     exact_matches = [c for c in candidates if c["is_exact_match"]]
     caveat_notes: list[str] = []
 
@@ -419,12 +410,12 @@ def compute_position_matcher(
             "message": "Not enough data yet",
         }
 
-    # Standardize column names and deduplicate
+
     work_df = df.copy()
     work_df.columns = [c.lower() for c in work_df.columns]
     work_df = work_df.loc[:, ~work_df.columns.duplicated()]
 
-    # Determine as_of_date
+
     if not as_of_date:
         as_of_date = str(work_df["date"].max())[:10]
 
@@ -435,11 +426,10 @@ def compute_position_matcher(
             "message": f"No data found for date {as_of_date}",
         }
 
-    # Determine unique expiry dates
+
     expiries = sorted(day_df["expiry_date"].astype(str).unique().tolist())
 
-    # Expiry selection logic:
-    # Nearest expiry with more than 3 days left
+
     valid_expiries = [
         exp for exp in expiries
         if int(day_df.loc[day_df["expiry_date"] == exp, "days_to_expiry"].iloc[0]) > 3
@@ -453,11 +443,11 @@ def compute_position_matcher(
             "message": "No valid contract expiries found",
         }
 
-    # Benchmark GOLDTEN row for the selected expiry
+
     goldten_rows = day_df[(day_df["symbol"] == "GOLDTEN") & (day_df["expiry_date"] == selected_expiry)]
     goldten_benchmark = goldten_rows.iloc[0].to_dict() if not goldten_rows.empty else None
 
-    # Compute single contract matches for each tracked symbol
+
     contracts_data: dict[str, dict[str, Any]] = {}
     single_matches: list[dict[str, Any]] = []
 
@@ -466,10 +456,10 @@ def compute_position_matcher(
         if sym_rows.empty:
             continue
 
-        # Find row for selected expiry or closest expiry
+
         matched_row = sym_rows[sym_rows["expiry_date"] == selected_expiry]
         if matched_row.empty:
-            # If GOLDM has a different cycle (e.g. Nov 05 instead of Oct 30), pick its nearest cycle > 3 days
+
             valid_sym = sym_rows[sym_rows["days_to_expiry"] > 3]
             matched_row = valid_sym.iloc[0:1] if not valid_sym.empty else sym_rows.iloc[0:1]
 
@@ -483,17 +473,17 @@ def compute_position_matcher(
         contracts_data[sym] = match_result
         single_matches.append(match_result)
 
-    # Combinations (up to 3 exact matches)
+
     combinations = find_exact_contract_combinations(
         quantity_g=quantity_g,
         contracts_data=contracts_data,
         max_combinations=3,
     )
 
-    # Total trading days loaded
+
     trading_days_loaded = work_df["date"].nunique()
 
-    # Best fit ranking
+
     best_fit = rank_best_fit(
         single_matches=single_matches,
         combinations=combinations,

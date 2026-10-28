@@ -54,7 +54,7 @@ class TestNormaliserWorkedCheck:
         assert norm_goldm == pytest.approx(11997.9899, rel=1e-4)
         assert round(norm_goldm, 1) == 11998.0
 
-        # Gap calculation: (norm_a - norm_b) / norm_b * 10000
+
         gap_bps = (norm_goldten - norm_goldm) / norm_goldm * 10000.0
         assert round(gap_bps, 1) == 1.7 or abs(gap_bps - 1.675) < 0.05
 
@@ -63,9 +63,9 @@ class TestNormaliserWorkedCheck:
         guinea_spec = CONTRACTS["GOLDGUINEA"]
         petal_spec = CONTRACTS["GOLDPETAL"]
 
-        # GOLDGUINEA 48000 per 8g at 999 = 6000 Rs/g
+
         assert normalise_price(48000.0, guinea_spec) == pytest.approx(6000.0, rel=1e-5)
-        # GOLDPETAL 6000 per 1g at 999 = 6000 Rs/g
+
         assert normalise_price(6000.0, petal_spec) == pytest.approx(6000.0, rel=1e-5)
 
 
@@ -99,26 +99,26 @@ class TestNoLookAhead:
         df = load_sample()
         window = 10
 
-        # Compute baseline
+
         base_spread = compute_spread_series(df, "GOLDM", "GOLDTEN", window=window)
         assert len(base_spread) >= 15
 
-        # Target day t is the 10th trading day
+
         t_idx = 10
         target_date = base_spread.iloc[t_idx]["date"]
         baseline_z_at_t = base_spread.iloc[t_idx]["z_score"]
 
-        # Modify future data: introduce massive shock prices on all rows after target_date
+
         perturbed_df = df.copy()
         future_mask = perturbed_df["Date"] > target_date
         perturbed_df.loc[future_mask, "Close"] = perturbed_df.loc[future_mask, "Close"] * 5.0
         perturbed_df.loc[future_mask, "Volume"] = 9999999
 
-        # Recompute spread on perturbed data
+
         new_spread = compute_spread_series(perturbed_df, "GOLDM", "GOLDTEN", window=window)
         new_z_at_t = new_spread.loc[new_spread["date"] == target_date, "z_score"].iloc[0]
 
-        # The z-score at day t must remain 100% IDENTICAL
+
         assert baseline_z_at_t == pytest.approx(new_z_at_t, rel=1e-6), (
             f"Look-ahead bias detected! z-score at {target_date} changed from "
             f"{baseline_z_at_t} to {new_z_at_t} when future prices were altered."

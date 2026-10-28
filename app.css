@@ -1,7 +1,4 @@
-/* ==========================================================================
-   KARAT — Step 1: global styles, grain, vignette
-   Logic and markup behaviour unchanged.
-   ========================================================================== */
+
 
 @import url("./design-tokens.css");
 
@@ -65,9 +62,7 @@ body {
   text-shadow: 0 0 28px rgba(212, 175, 55, 0.28), 0 0 60px rgba(184, 144, 42, 0.12);
 }
 
-/* --------------------------------------------------------------------------
-   Vignette + gold crown light + crimson ember at the page edges
-   -------------------------------------------------------------------------- */
+
 .page-vignette {
   position: fixed;
   inset: 0;
@@ -78,9 +73,7 @@ body {
     radial-gradient(ellipse 46% 30% at 50% -6%, rgba(212, 175, 55, 0.11), transparent 58%);
 }
 
-/* --------------------------------------------------------------------------
-   Film grain — static, ~2.8% opacity, never intercepts input
-   -------------------------------------------------------------------------- */
+
 .page-grain {
   position: fixed;
   inset: 0;
@@ -92,7 +85,7 @@ body {
   background-size: 220px 220px;
 }
 
-/* Spotlight Reveal Overlay Container */
+
 #spotlight-wrapper {
   position: fixed;
   inset: 0;
@@ -151,9 +144,7 @@ body {
   color: var(--text-1);
 }
 
-/* ==========================================================================
-   1. NAVIGATION BAR — Glass blur on scroll, hide/show, progress line
-   ========================================================================== */
+
 .surface-nav {
   background-color: transparent;
   border-bottom: 1px solid transparent;
@@ -167,7 +158,7 @@ body {
   will-change: transform, background-color;
 }
 
-/* Scrolled state — crisp solid bar */
+
 .surface-nav.nav-scrolled {
   background-color: var(--bg-1);
   border-bottom: 1px solid var(--line-1);
@@ -176,13 +167,13 @@ body {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
 }
 
-/* Hidden on scroll-down */
+
 .surface-nav.nav-hidden {
   transform: translateY(-100%);
   pointer-events: none;
 }
 
-/* Scroll progress bar at the bottom of the nav */
+
 .nav-scroll-progress {
   position: absolute;
   bottom: 0;
@@ -204,9 +195,7 @@ body {
   color: var(--text-2);
 }
 
-/* ==========================================================================
-   FOOTER — Richer cinematic treatment
-   ========================================================================== */
+
 .surface-footer {
   background-color: var(--bg-1);
   border-top: 1px solid var(--line-1);
@@ -225,9 +214,7 @@ body {
   pointer-events: none;
 }
 
-/* ==========================================================================
-   TAB NAVIGATION — Active state + underline animation
-   ========================================================================== */
+
 .nav-tab-btn {
   position: relative;
   transition: color var(--duration-hover) var(--ease-lux), background-color var(--duration-hover) var(--ease-lux);
@@ -245,9 +232,7 @@ body {
   border-bottom: none !important;
 }
 
-/* ==========================================================================
-   CARDS — Subtle hover lift, inner highlight, border glow
-   ========================================================================== */
+
 .gl-card {
   background-color: var(--bg-2);
   border: 1px solid var(--line-1);
@@ -301,9 +286,7 @@ body {
   transform: translateY(-1px);
 }
 
-/* ==========================================================================
-   TABLES — Alternating rows, sticky header, refined spacing
-   ========================================================================== */
+
 .gl-table {
   width: 100%;
   border-collapse: separate;
@@ -326,7 +309,7 @@ body {
   z-index: 5;
 }
 
-/* Prevent sticky header bleed-through */
+
 .gl-table th::after {
   content: '';
   position: absolute;
@@ -351,7 +334,7 @@ body {
   text-align: right;
 }
 
-/* Alternating row shading */
+
 .gl-table tbody tr:nth-child(even) td {
   background-color: rgba(15, 10, 12, 0.35);
 }
@@ -360,7 +343,7 @@ body {
   background-color: var(--bg-3);
 }
 
-/* Micro-text readability overrides so nothing looks tiny or congested */
+
 .text-\[10px\] {
   font-size: 0.8rem !important;
   line-height: 1.25rem !important;
@@ -371,12 +354,12 @@ body {
   line-height: 1.35rem !important;
 }
 
-/* Range Slider */
+
 input[type="range"] {
   accent-color: var(--gold-500);
 }
 
-/* Custom Scrollbar */
+
 #spotlight-wrapper::-webkit-scrollbar,
 body::-webkit-scrollbar {
   width: 8px;
@@ -399,10 +382,7 @@ body::-webkit-scrollbar-thumb:hover {
   background: var(--gold-800);
 }
 
-/* --------------------------------------------------------------------------
-   Step 1 palette remap — existing JS still emits slate/amber/emerald classes.
-   Visual only; no data or signal logic is touched.
-   -------------------------------------------------------------------------- */
+
 .text-emerald-400,
 .text-emerald-300,
 .bg-emerald-400 { color: var(--gold-400) !important; }
@@ -449,10 +429,7 @@ body::-webkit-scrollbar-thumb:hover {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Text Blur Animation (Superdesign Prompt Effect)
-   Smooth blur-in reveal with optical easing and staggered cascade
-   -------------------------------------------------------------------------- */
+
 @keyframes textBlurIn {
   0% {
     opacity: 0;
@@ -494,7 +471,7 @@ body::-webkit-scrollbar-thumb:hover {
   animation-delay: 0.95s;
 }
 
-/* Feature level blur reveal for dashboard panels / dynamic elements */
+
 .tab-content-panel:not(.hidden) {
   animation: textBlurIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -503,9 +480,7 @@ body::-webkit-scrollbar-thumb:hover {
   animation: textBlurIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* --------------------------------------------------------------------------
-   Spotlight Cursor Effect (Original prompt vibrant neon/violet palette - not golden)
-   -------------------------------------------------------------------------- */
+
 .spotlight-area {
   position: relative;
   overflow: hidden;
@@ -537,12 +512,7 @@ body::-webkit-scrollbar-thumb:hover {
   opacity: 1;
 }
 
-/* ==========================================================================
-   LIVING WARM AURORA CANVAS (Superdesign Experience Signature)
-   Canvas: near-black #07080a
-   Streaks: Crimson ~#ff2f3a -> Coral ~#ff6b4a -> Warm Amber ~#ffb347
-   Strictly warm palette (no purple/indigo), mix-blend-mode: screen, 0% full bloom
-   ========================================================================== */
+
 .aurora-canvas {
   display: none !important;
 }
@@ -555,7 +525,7 @@ body::-webkit-scrollbar-thumb:hover {
   will-change: transform, opacity;
 }
 
-/* Blade 1: Dominant central diagonal light-blade */
+
 .aurora-blade-1 {
   width: 80vw;
   height: 150vh;
@@ -573,7 +543,7 @@ body::-webkit-scrollbar-thumb:hover {
   animation: auroraDrift1 16s ease-in-out infinite alternate;
 }
 
-/* Blade 2: Intense crimson core streak */
+
 .aurora-blade-2 {
   width: 58vw;
   height: 140vh;
@@ -591,7 +561,7 @@ body::-webkit-scrollbar-thumb:hover {
   animation: auroraDrift2 21s ease-in-out infinite alternate;
 }
 
-/* Blade 3: Right diagonal coral-amber streak */
+
 .aurora-blade-3 {
   width: 70vw;
   height: 130vh;
@@ -609,7 +579,7 @@ body::-webkit-scrollbar-thumb:hover {
   animation: auroraDrift3 18s ease-in-out infinite alternate;
 }
 
-/* Blade 4: Left ambient coral-amber streak */
+
 .aurora-blade-4 {
   width: 65vw;
   height: 120vh;
@@ -627,7 +597,7 @@ body::-webkit-scrollbar-thumb:hover {
   animation: auroraDrift4 22s ease-in-out infinite alternate;
 }
 
-/* Blade 5: Deep background crimson heart */
+
 .aurora-blade-5 {
   width: 55vw;
   height: 110vh;
@@ -646,7 +616,6 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 
-/* 0% keyframe set to full bloom for instant living radiance */
 @keyframes auroraDrift1 {
   0% {
     transform: translate3d(0, 0, 0) rotate(-32deg) scale(1);
@@ -737,7 +706,7 @@ body::-webkit-scrollbar-thumb:hover {
   }
 }
 
-/* Vignette ensuring the aurora reads as crafted cinematic light */
+
 .aurora-vignette {
   position: absolute;
   inset: 0;
@@ -751,7 +720,7 @@ body::-webkit-scrollbar-thumb:hover {
   z-index: 2;
 }
 
-/* SVG feTurbulence Film Grain Overlay */
+
 .aurora-grain {
   position: absolute;
   inset: 0;
@@ -762,9 +731,7 @@ body::-webkit-scrollbar-thumb:hover {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
-/* ==========================================================================
-   ANIMATED FLOATING NAVIGATION BAR & GLIDING INDICATOR (Karat Signature)
-   ========================================================================== */
+
 #desktop-nav {
   position: relative;
   display: inline-flex;
@@ -818,9 +785,7 @@ body::-webkit-scrollbar-thumb:hover {
   text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
 }
 
-/* ==========================================================================
-   SMOOTH & EFFORTLESS SCROLLING ACROSS ALL PAGES
-   ========================================================================== */
+
 html,
 body,
 #spotlight-wrapper {
@@ -829,7 +794,7 @@ body,
   overscroll-behavior-y: contain;
 }
 
-/* Custom Sleek Dark & Gold Scrollbars */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -851,14 +816,14 @@ body,
   box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
 }
 
-/* Horizontal scrollable tables smooth track */
+
 .gl-table-wrapper,
 .overflow-x-auto {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Utility to hide scrollbars where appropriate */
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
@@ -867,9 +832,7 @@ body,
   scrollbar-width: none;
 }
 
-/* ==========================================================================
-   ANIMATED COUNT-UP for stat numbers
-   ========================================================================== */
+
 @keyframes statFadeIn {
   0% {
     opacity: 0;
@@ -885,18 +848,14 @@ body,
   animation: statFadeIn 0.45s var(--ease-lux) both;
 }
 
-/* ==========================================================================
-   SECTION SPACING — Better vertical rhythm
-   ========================================================================== */
+
 .tab-content-panel > .gl-card + .gl-card,
 .tab-content-panel > div + .gl-card,
 .tab-content-panel > .gl-card + div {
   margin-top: 1.5rem;
 }
 
-/* ==========================================================================
-   SECTION LABEL REFINEMENTS — Consistent header treatment
-   ========================================================================== */
+
 .section-label {
   font-size: 0.75rem;
   font-weight: 700;
@@ -906,10 +865,7 @@ body,
   font-family: var(--font-mono);
 }
 
-/* ==========================================================================
-   <ContractBars /> COMPONENT
-   Physical Gold Bullion Pack Size Comparison & Unified Level Scale
-   ========================================================================== */
+
 .contract-bars-card {
   position: relative;
   background: var(--bg-1);
@@ -981,7 +937,7 @@ body,
   box-shadow: var(--glow-gold);
 }
 
-/* Staging Area with Baseline */
+
 .contract-bars-stage-wrapper {
   position: relative;
   width: 100%;
@@ -1000,7 +956,7 @@ body,
   padding-bottom: 0;
 }
 
-/* Thin Baseline across all 4 bars */
+
 .contract-bars-baseline {
   width: 100%;
   height: 1px;
@@ -1020,7 +976,7 @@ body,
   opacity: 0.5;
 }
 
-/* Light Sweep across the stage */
+
 .contract-bars-sweep {
   position: absolute;
   top: 0;
@@ -1053,7 +1009,7 @@ body,
   }
 }
 
-/* Bar Item Button & Staggered Rise */
+
 .contract-bar-item {
   flex: 1;
   min-width: 0;
@@ -1071,7 +1027,7 @@ body,
   transition: opacity 0.3s var(--ease-lux);
 }
 
-/* Staggered Entrance Motion (runs once) */
+
 .contract-bar-item {
   animation: barRise 0.7s var(--ease-lux) both;
   will-change: transform, opacity;
@@ -1104,13 +1060,13 @@ body,
   }
 }
 
-/* Dim others to 60% on hover/focus */
+
 .contract-bars-stage:hover .contract-bar-item:not(:hover),
 .contract-bars-stage:focus-within .contract-bar-item:not(:focus-within) {
   opacity: 0.6;
 }
 
-/* Fair Price Tag above bar (fades in on levelling) */
+
 .bar-fair-price-tag {
   opacity: 0;
   transform: translateY(4px);
@@ -1140,7 +1096,7 @@ body,
   transform: translateY(0);
 }
 
-/* Bar Container with Hover Lift & Glow */
+
 .bar-visual-wrap {
   position: relative;
   width: 100%;
@@ -1170,14 +1126,14 @@ body,
   filter: drop-shadow(0 6px 18px rgba(212, 175, 55, 0.45));
 }
 
-/* GOLDTEN Reference Distinct Outline */
+
 .contract-bar-item[data-symbol="GOLDTEN"] .contract-bar-svg {
   outline: 1px solid rgba(221, 187, 85, 0.75);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
-/* Selected Bar Active State */
+
 .contract-bar-item.is-selected .bar-visual-wrap {
   transform: translateY(-4px);
 }
@@ -1192,7 +1148,7 @@ body,
   outline: none;
 }
 
-/* Meta Labels Under Each Bar */
+
 .bar-meta {
   margin-top: 0.85rem;
   display: flex;
@@ -1222,7 +1178,7 @@ body,
   color: var(--text-2);
 }
 
-/* Reference Tag on GOLDTEN */
+
 .bar-ref-tag {
   display: inline-block;
   margin-top: 0.2rem;
@@ -1238,7 +1194,7 @@ body,
   border: 1px solid rgba(212, 175, 55, 0.35);
 }
 
-/* Selected Contract Pill */
+
 .bar-selected-tag {
   display: none;
   margin-top: 0.2rem;
@@ -1257,7 +1213,7 @@ body,
   display: inline-block;
 }
 
-/* Accessible Tooltip */
+
 .bar-tooltip {
   position: absolute;
   bottom: calc(100% + 14px);
@@ -1312,7 +1268,7 @@ body,
   font-weight: 500;
 }
 
-/* Bottom Caption */
+
 .contract-bars-caption {
   margin-top: 1.25rem;
   text-align: center;
@@ -1327,7 +1283,7 @@ body,
   color: var(--gold-400);
 }
 
-/* Reduced Motion Override */
+
 @media (prefers-reduced-motion: reduce) {
   .contract-bar-item,
   .contract-bars-sweep {
@@ -1342,15 +1298,13 @@ body,
   }
 }
 
-/* ==========================================================================
-   KARAT AI GUIDE: FLOATING CHATBOT POPUP STYLES
-   ========================================================================== */
+
 .karat-ai-container {
   position: relative;
   z-index: 9999;
 }
 
-/* Floating Launcher Button */
+
 .karat-ai-launcher {
   position: fixed;
   bottom: 24px;
@@ -1446,7 +1400,7 @@ body,
   transform: translateX(0);
 }
 
-/* Floating Chat Window */
+
 .karat-ai-window {
   position: fixed;
   bottom: 94px;
@@ -1479,7 +1433,7 @@ body,
   visibility: visible;
 }
 
-/* Header */
+
 .ai-header {
   padding: 14px 16px;
   background: rgba(18, 22, 30, 0.95);
@@ -1558,7 +1512,7 @@ body,
   color: var(--gold-200);
 }
 
-/* Suggested Questions Bar */
+
 .ai-suggested-wrapper {
   padding: 10px 14px;
   background: rgba(14, 17, 23, 0.7);
@@ -1610,7 +1564,7 @@ body,
   transform: translateY(-1px);
 }
 
-/* Messages Area */
+
 .ai-chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -1703,16 +1657,50 @@ body,
   border: 1px solid rgba(212, 175, 55, 0.15);
 }
 
+.ai-msg-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ai-model-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--gold-300);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  letter-spacing: 0.02em;
+}
+
+.ai-msg-user .ai-msg-meta {
+  justify-content: flex-end;
+  border-top-color: rgba(212, 175, 55, 0.15);
+}
+
 .ai-msg-time {
   display: block;
   font-size: 10px;
   color: rgba(255, 255, 255, 0.4);
-  margin-top: 4px;
-  text-align: right;
   font-family: var(--font-mono);
+  white-space: nowrap;
 }
 
-/* Typing Indicator */
+.ai-settings-panel {
+  transition: all 0.25s ease-in-out;
+  box-shadow: inset 0 -1px 0 rgba(212, 175, 55, 0.12);
+}
+
+
 .ai-typing-indicator {
   display: flex;
   align-items: center;
@@ -1757,7 +1745,7 @@ body,
   }
 }
 
-/* Input Bar */
+
 .ai-input-bar {
   padding: 12px 14px;
   background: rgba(15, 18, 24, 0.98);
@@ -1818,7 +1806,7 @@ body,
   transform: none;
 }
 
-/* Mobile responsive */
+
 @media (max-width: 640px) {
   .karat-ai-launcher {
     bottom: 18px;
@@ -1836,9 +1824,7 @@ body,
   }
 }
 
-/* ==========================================================================
-   VISUALIZER / MARKET REPLAY STUDIO STYLES
-   ========================================================================== */
+
 #panel-visualizer canvas {
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;

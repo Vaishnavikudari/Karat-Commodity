@@ -44,7 +44,7 @@ class TestApiEndpoints:
         assert "contracts" in data
         assert len(data["contracts"]) == 4
 
-        # Check required fields on each contract
+
         for c in data["contracts"]:
             assert "symbol" in c
             assert "normalised_price" in c
@@ -137,7 +137,7 @@ class TestApiEndpoints:
         assert "gross_pnl_bps" in header
         assert "net_pnl_rs" in header
 
-        # Test period parameter
+
         resp_build = client.get("/export/trades.csv?period=build")
         assert resp_build.status_code == 200
 

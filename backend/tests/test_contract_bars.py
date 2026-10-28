@@ -24,7 +24,7 @@ class TestContractBarsSizing:
         assert h_1g >= MIN_HEIGHT, f"1g bar height {h_1g} must be >= {MIN_HEIGHT}"
         assert h_1g == MIN_HEIGHT, f"1g bar height should floor at exactly {MIN_HEIGHT}"
 
-        # Sub-gram test
+
         h_half_g = calculate_bar_height(0.5, is_levelled=False)
         assert h_half_g >= MIN_HEIGHT
 
@@ -38,7 +38,7 @@ class TestContractBarsSizing:
         ]
         heights = [(sym, calculate_bar_height(w, is_levelled=False)) for sym, w in contracts]
 
-        # Verify strict ordering
+
         h_petal = heights[0][1]
         h_guinea = heights[1][1]
         h_ten = heights[2][1]

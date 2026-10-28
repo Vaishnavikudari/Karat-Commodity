@@ -53,14 +53,14 @@ def tune_parameters_on_build(
     if spread_df.empty:
         return {"best_window": ZSCORE_WINDOW, "best_entry_z": ENTRY_Z}
 
-    # Strict partition: take ONLY the build period
+
     split_idx = int(len(spread_df) * BUILD_FRACTION)
     build_df = spread_df.iloc[:split_idx].copy()
 
     best_pnl = -float("inf")
     best_params = {"window": ZSCORE_WINDOW, "entry_z": ENTRY_Z, "exit_z": EXIT_Z}
 
-    # Grid search strictly within build data
+
     for w in [15, 20, 25]:
         s_df = compute_spread_series(df, symbol_a, symbol_b, window=w).iloc[:split_idx]
         for ez in [1.5, 2.0, 2.5]:
@@ -99,12 +99,12 @@ def run_backtest(
             "reason": "Insufficient common data for backtesting",
         }
 
-    # Split into BUILD (in-sample) and UNSEEN (held-out out-of-sample)
+
     split_idx = int(len(spread_df) * build_fraction)
     build_df = spread_df.iloc[:split_idx].copy()
     unseen_df = spread_df.iloc[split_idx:].copy()
 
-    # Walk-forward simulation
+
     build_trades = _run_strategy(build_df, entry_z, exit_z, time_stop_days, symbol_a, symbol_b, cost_per_leg_bps, slippage_mult)
     unseen_trades = _run_strategy(unseen_df, entry_z, exit_z, time_stop_days, symbol_a, symbol_b, cost_per_leg_bps, slippage_mult)
     all_trades = _run_strategy(spread_df, entry_z, exit_z, time_stop_days, symbol_a, symbol_b, cost_per_leg_bps, slippage_mult)
@@ -113,10 +113,10 @@ def run_backtest(
     unseen_metrics = _compute_metrics(unseen_trades, cost_per_leg_bps, slippage_mult)
     combined_metrics = _compute_metrics(all_trades, cost_per_leg_bps, slippage_mult)
 
-    # Attribution on unseen period
+
     attribution = _compute_attribution(unseen_df, unseen_trades, unseen_metrics)
 
-    # Cost sensitivity curve (0 to 2.0 bps per leg, with thin slippage variations)
+
     cost_sensitivity = []
     for cost in [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]:
         m = _compute_metrics(unseen_trades, float(cost), slippage_mult)
@@ -129,7 +129,7 @@ def run_backtest(
             "profitable": bool(m["net_pnl_bps"] > 0),
         })
 
-    # Slippage sensitivity
+
     slippage_sensitivity = []
     for slip in [1.0, 1.5, 2.0, 2.5, 3.0]:
         m = _compute_metrics(unseen_trades, cost_per_leg_bps, slip)
@@ -139,10 +139,10 @@ def run_backtest(
             "net_pnl_rs": float(m["net_pnl_rs"]),
         })
 
-    # Robustness checks across neighbor parameters
+
     robustness = _robustness_check(spread_df, unseen_df, window, entry_z, exit_z, time_stop_days, cost_per_leg_bps, slippage_mult, symbol_a=symbol_a, symbol_b=symbol_b)
 
-    # Honest verdict
+
     verdict = _generate_verdict(unseen_metrics, unseen_trades, cost_per_leg_bps)
 
     return {
@@ -190,10 +190,10 @@ def _run_strategy(
     trades = []
     in_trade = False
     entry_row = None
-    direction = 0  # +1 = long spread (Long A / Short B), -1 = short spread (Short A / Long B)
+    direction = 0
     entry_day_idx = 0
 
-    # Contract specifications for Rupee P&L sizing
+
     spec_a = CONTRACTS.get(symbol_a)
     spec_b = CONTRACTS.get(symbol_b)
     lot_size_a = spec_a.lot_size_g if spec_a else 100.0
@@ -201,20 +201,20 @@ def _run_strategy(
     lot_size_b = spec_b.lot_size_g if spec_b else 10.0
     quote_base_b = spec_b.quote_base_g if spec_b else 10.0
 
-    # Standard position sizing targeting ~100g base
+
     lots_a = max(1, int(round(100.0 / lot_size_a)))
     grams_a = lots_a * lot_size_a
     lots_b = max(1, int(round(grams_a / lot_size_b)))
     grams_b = lots_b * lot_size_b
 
-    # Rupee point multiplier = lots * (lot_size_g / quote_base_g)
+
     mult_a = lots_a * (lot_size_a / quote_base_a)
     mult_b = lots_b * (lot_size_b / quote_base_b)
 
     for idx, (row_idx, row) in enumerate(spread_df.iterrows()):
         z = row["z_score"]
 
-        # Date handling for tender window and staggered expiry risk
+
         raw_date = row["date"]
         curr_d = raw_date.date() if hasattr(raw_date, "date") else (
             dt.date.fromisoformat(str(raw_date)[:10]) if isinstance(raw_date, str) else raw_date
@@ -250,8 +250,8 @@ def _run_strategy(
             earlier_expiry = exp_b_d
 
         if not in_trade:
-            # Check calendar lifecycle safety before entry:
-            # Reject entry inside tender window or within 3 days of contract expiry
+
+
             is_entry_calendar_safe = True
             if earlier_tender_start and curr_d >= earlier_tender_start:
                 is_entry_calendar_safe = False
@@ -262,32 +262,32 @@ def _run_strategy(
                 in_trade = True
                 entry_row = row
                 entry_day_idx = idx
-                # Mean reversion: if z > 0, spread is abnormally high -> Short Spread (Short A / Long B)
+
                 direction = -1 if z > 0 else 1
         else:
             holding_days = idx - entry_day_idx
             should_exit = False
             exit_reason = ""
 
-            # Priority 1: Tender period liquidation (compulsory delivery window safety)
+
             if earlier_tender_start and curr_d >= earlier_tender_start:
                 should_exit = True
                 exit_reason = "tender_period_liquidation"
-            # Priority 2: Staggered-expiry risk management (prevent unhedged naked single-leg exposure)
+
             elif earlier_expiry and curr_d >= earlier_expiry:
                 should_exit = True
                 exit_reason = "staggered_expiry_unwind"
-            # Priority 3: Statistical mean reversion
+
             elif abs(z) < exit_z:
                 should_exit = True
                 exit_reason = "z_score_mean_reversion"
-            # Priority 4: Maximum holding period time-stop
+
             elif holding_days >= time_stop_days:
                 should_exit = True
                 exit_reason = "time_stop"
 
             if should_exit:
-                # Gross P&L in bps = direction * (exit_spread_bps - entry_spread_bps)
+
                 gross_pnl_bps = direction * (row["spread_bps"] - entry_row["spread_bps"])
 
                 raw_a_entry = float(entry_row["raw_a"])
@@ -295,9 +295,7 @@ def _run_strategy(
                 raw_a_exit = float(row["raw_a"])
                 raw_b_exit = float(row["raw_b"])
 
-                # Per-leg Rupee P&L:
-                # direction == 1 (Long Spread): Long Leg A, Short Leg B
-                # direction == -1 (Short Spread): Short Leg A, Long Leg B
+
                 if direction == 1:
                     pnl_leg_a_rs = mult_a * (raw_a_exit - raw_a_entry)
                     pnl_leg_b_rs = mult_b * (raw_b_entry - raw_b_exit)
@@ -307,7 +305,7 @@ def _run_strategy(
 
                 gross_pnl_rs = pnl_leg_a_rs + pnl_leg_b_rs
 
-                # Turnover & transaction costs in Rs
+
                 notional_entry = (mult_a * raw_a_entry) + (mult_b * raw_b_entry)
                 notional_exit = (mult_a * raw_a_exit) + (mult_b * raw_b_exit)
                 turnover_rs = notional_entry + notional_exit
@@ -406,29 +404,29 @@ def _compute_metrics(
     wins = [p for p in net_pnls if p > 0]
     losses = [p for p in net_pnls if p <= 0]
 
-    # Max Drawdown
+
     cumulative = np.cumsum(net_pnls)
     peak = np.maximum.accumulate(cumulative)
     drawdown = peak - cumulative
     max_dd = float(np.max(drawdown)) if len(drawdown) > 0 else 0.0
 
-    # Max Drawdown in Rs
+
     cumulative_rs = np.cumsum(net_pnls_rs)
     peak_rs = np.maximum.accumulate(cumulative_rs)
     drawdown_rs = peak_rs - cumulative_rs
     max_dd_rs = float(np.max(drawdown_rs)) if len(drawdown_rs) > 0 else 0.0
 
-    # Profit Factor
+
     gross_wins = sum(w for w in gross_pnls if w > 0)
     gross_losses = abs(sum(l for l in gross_pnls if l < 0))
     if gross_losses > 0:
         profit_factor = round(gross_wins / gross_losses, 2)
     elif gross_wins > 0:
-        profit_factor = 999.0  # Infinite
+        profit_factor = 999.0
     else:
         profit_factor = 0.0
 
-    # Break-even cost per leg
+
     avg_gross_per_trade = total_gross / len(trades) if trades else 0.0
     breakeven_cost = avg_gross_per_trade / TOTAL_LEGS_PER_ROUND_TRIP
 
@@ -464,14 +462,14 @@ def _compute_attribution(
             "correlation_to_gold": 0.0,
         }
 
-    # Gold benchmark move over unseen period (using norm_a as proxy for physical gold)
+
     start_gold = unseen_df.iloc[0]["norm_a"]
     end_gold = unseen_df.iloc[-1]["norm_a"]
     gold_move_bps = ((end_gold - start_gold) / start_gold) * 10000.0 if start_gold > 0 else 0.0
 
     strat_pnl = metrics["net_pnl_bps"]
 
-    # Correlation between daily spread changes and daily gold returns
+
     gold_returns = unseen_df["norm_a"].pct_change().dropna()
     spread_diffs = unseen_df["spread_bps"].diff().dropna()
     min_len = min(len(gold_returns), len(spread_diffs))

@@ -1,18 +1,14 @@
-/**
- * KARAT — Frontend Application Logic
- * Quantitative Commodity Derivatives Intelligence on MCX Gold Futures
- */
+
 
 (function () {
   'use strict';
 
-  // API Base URL - prefers running local backend, with graceful fallback
+
   const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? (window.location.port === '8000' ? '' : 'http://127.0.0.1:8000')
     : '';
 
-  // Application State
-  // Pairs mapping
+
   const PAIRS = [
     { id: 'GOLDM_GOLDTEN', label: 'GOLDM vs GOLDTEN (100g 995 vs 10g 999)' },
     { id: 'GOLDM_GOLDGUINEA', label: 'GOLDM vs GOLDGUINEA (100g 995 vs 8g 999)' },
@@ -22,7 +18,7 @@
     { id: 'GOLDGUINEA_GOLDPETAL', label: 'GOLDGUINEA vs GOLDPETAL (8g 999 vs 1g 999)' }
   ];
 
-  // Real MCX Bhavcopy Reference Dataset (14 Oct 2026)
+
   const DEMO_CONTRACTS = [
     {
       symbol: 'GOLDTEN',
@@ -114,7 +110,7 @@
     }
   ];
 
-  // Application State
+
   const state = {
     activeTab: 'overview',
     dataSource: 'sample',
@@ -135,7 +131,7 @@
     selectedContract: null
   };
 
-  // Helper: Format Indian Rupee
+
   function formatINR(val, decimals = 2) {
     if (val === null || val === undefined || isNaN(val)) return '—';
     return '₹' + Number(val).toLocaleString('en-IN', {
@@ -144,7 +140,7 @@
     });
   }
 
-  // Helper: Format Number
+
   function formatNum(val, decimals = 2) {
     if (val === null || val === undefined || isNaN(val)) return '—';
     return Number(val).toLocaleString('en-IN', {
@@ -153,7 +149,7 @@
     });
   }
 
-  // Generic API fetcher with timeout and fallback
+
   async function fetchApi(endpoint) {
     try {
       const url = `${API_BASE}${endpoint}`;
@@ -166,9 +162,7 @@
     }
   }
 
-  // ==========================================
-  // SPOTLIGHT MASK CONTROLLER
-  // ==========================================
+
   function initSpotlightReveal() {
     const btnExp = document.getElementById('btn-experience-karat');
     const btnBackHero = document.getElementById('btn-back-hero');
@@ -184,10 +178,10 @@
       spotlightWrapper.style.setProperty('--click-y', `${clickY}px`);
       spotlightWrapper.classList.add('active');
 
-      // Refresh indicator position after spotlight expand
+
       setTimeout(() => updateNavIndicator(), 350);
 
-      // Refresh data
+
       loadDashboard();
     }
 
@@ -199,20 +193,18 @@
     if (btnExp) btnExp.addEventListener('click', openSpotlight);
     if (btnBackHero) btnBackHero.addEventListener('click', closeSpotlight);
 
-    // Also support direct hash navigation e.g. #dashboard
+
     if (window.location.hash === '#dashboard' || window.location.hash === '#experience') {
       openSpotlight();
     }
   }
 
-  // ==========================================
-  // ANIMATED TAB NAVIGATION (GLIDING PILL INDICATOR)
-  // ==========================================
+
   function updateNavIndicator(activeBtn) {
     const indicator = document.getElementById('nav-pill-indicator');
     const nav = document.getElementById('desktop-nav');
     if (!indicator || !nav) return;
-    
+
     const target = activeBtn || nav.querySelector('.nav-tab-btn.active') || nav.querySelector('.nav-tab-btn');
     if (!target) return;
 
@@ -237,7 +229,7 @@
         if (!tab) return;
         state.activeTab = tab;
 
-        // Synchronize active states across desktop and mobile button bars
+
         tabButtons.forEach(b => {
           if (b.getAttribute('data-tab') === tab) {
             b.classList.add('active');
@@ -249,7 +241,7 @@
           }
         });
 
-        // Switch panels with smooth fade
+
         document.querySelectorAll('.tab-content-panel').forEach(panel => {
           panel.classList.add('hidden');
         });
@@ -257,12 +249,12 @@
         const activePanel = document.getElementById(`panel-${tab}`);
         if (activePanel) activePanel.classList.remove('hidden');
 
-        // Effortless Smooth Page Scrolling: Return viewport to top smoothly
+
         if (wrapper) {
           wrapper.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Refresh views for active tab
+
         if (tab === 'visualizer') {
           loadVisualizerData();
         } else {
@@ -274,12 +266,12 @@
           else if (tab === 'methodology') loadMethodologyData();
         }
 
-        // Update AI Guide context for active tab
+
         updateAiGuideContext(tab);
       });
     });
 
-    // Hover micro-interaction: indicator glides to hovered button and returns to active
+
     if (desktopNav) {
       desktopNav.querySelectorAll('.nav-tab-btn').forEach(btn => {
         btn.addEventListener('mouseenter', () => updateNavIndicator(btn));
@@ -296,12 +288,7 @@
     }
   }
 
-  // ==========================================
-  // EFFORTLESS SCROLL ENHANCEMENTS & QUICK ACTION
-  // Nav: transparent over hero → glass after 40px
-  // Nav: hide on scroll-down, reappear on scroll-up
-  // Scroll progress bar at the bottom of the nav
-  // ==========================================
+
   function initScrollEnhancements() {
     const wrapper = document.getElementById('spotlight-wrapper');
     const btnScrollTop = document.getElementById('btn-scroll-top');
@@ -316,7 +303,7 @@
       const scrollY = wrapper.scrollTop;
       const scrollHeight = wrapper.scrollHeight - wrapper.clientHeight;
 
-      // --- 1. Scroll-to-top FAB ---
+
       if (btnScrollTop) {
         if (scrollY > 220) {
           btnScrollTop.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
@@ -327,7 +314,7 @@
         }
       }
 
-      // --- 2. Glass blur toggle after 40px ---
+
       if (nav) {
         if (scrollY > 40) {
           nav.classList.add('nav-scrolled');
@@ -335,7 +322,7 @@
           nav.classList.remove('nav-scrolled');
         }
 
-        // --- 3. Hide on scroll-down, show on scroll-up ---
+
         const delta = scrollY - lastScrollY;
         if (delta > 8 && scrollY > 120) {
           nav.classList.add('nav-hidden');
@@ -344,7 +331,7 @@
         }
       }
 
-      // --- 4. Scroll progress bar ---
+
       if (progressBar && scrollHeight > 0) {
         const pct = Math.min((scrollY / scrollHeight) * 100, 100);
         progressBar.style.width = pct + '%';
@@ -368,9 +355,7 @@
     }
   }
 
-  // ==========================================
-  // ANIMATED COUNT-UP UTILITY
-  // ==========================================
+
   function animateCountUp(el, target, decimals = 0, duration = 600, prefix = '', suffix = '') {
     if (!el || isNaN(target)) return;
     const start = 0;
@@ -378,7 +363,7 @@
     function tick(now) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
+
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = start + (target - start) * eased;
       el.textContent = prefix + current.toLocaleString('en-IN', {
@@ -391,12 +376,9 @@
   }
 
 
-  // ==========================================
-  // DATA LOADERS & RENDERERS
-  // ==========================================
   async function loadDashboard() {
     updateProvenanceBadge('Checking API...');
-    renderAnswerCard(null); // Initial render
+    renderAnswerCard(null); 
     const data = await fetchApi('/contracts');
     if (data) {
       state.contractsData = data;
@@ -429,12 +411,12 @@
     }
   }
 
-  // Evaluate Signal State helper
+
   function evaluateSignalState(signalData) {
     if (!signalData) {
       return { isOpportunity: false };
     }
-    // Check current pair signal
+
     const cur = signalData.current_pair_signal;
     if (cur && cur.has_signal) {
       return {
@@ -447,7 +429,7 @@
         isCoin: false
       };
     }
-    // Check active signals list across all combinations
+
     const active = (signalData.active_signals || signalData.all_active_signals || [])
       .filter(s => s.has_signal || s.signal_state === 'entry');
     if (active.length > 0) {
@@ -467,7 +449,7 @@
     return { isOpportunity: false };
   }
 
-  // 1. PLAIN-ENGLISH OPPORTUNITY ANSWER CARD
+
   function renderAnswerCard(signalData) {
     const card = document.getElementById('answer-card');
     if (!card) return;
@@ -534,7 +516,7 @@
         <div class="flex-1 min-w-0">
           ${headlineHtml}
           ${sublineHtml}
-          
+
           <div class="mt-3">
             <button id="btn-what-does-this-mean" type="button" class="inline-flex items-center gap-1.5 text-sm text-amber-400 hover:text-amber-300 focus:outline-none focus:underline font-medium cursor-pointer transition-colors" aria-expanded="false" aria-controls="answer-explanation">
               <span>What does this mean?</span>
@@ -549,7 +531,7 @@
       </div>
     `;
 
-    // Keyboard & click toggle for explanation
+
     const btn = document.getElementById('btn-what-does-this-mean');
     const explanation = document.getElementById('answer-explanation');
     const icon = document.getElementById('what-means-icon');
@@ -569,16 +551,13 @@
     }
   }
 
-  // Price normalisation formula: (P_raw / Quote_Base) * (999 / Purity)
+
   function normalisePrice(rawPrice, quoteBaseG, purity) {
     if (!rawPrice || !quoteBaseG || !purity) return 0;
     return (rawPrice / quoteBaseG) * (999.0 / purity);
   }
 
-  // ==========================================
-  // <ContractBars /> REUSABLE COMPONENT
-  // Physical Gold Bullion Pack Size Comparison & Unified Level Scale
-  // ==========================================
+
   const CONTRACT_BARS_SPECS = [
     { symbol: 'GOLDM', name: 'Gold Mini', weight: 100, quoteBase: 10, purity: 995, isReference: false },
     { symbol: 'GOLDTEN', name: 'Gold Ten', weight: 10, quoteBase: 10, purity: 999, isReference: true },
@@ -626,7 +605,7 @@
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Resolve fair prices from current contracts data or fallback
+
     const contractsList = (state.contractsData && state.contractsData.contracts) || DEMO_CONTRACTS;
     const contractMap = {};
     contractsList.forEach(c => {
@@ -635,7 +614,7 @@
 
     const isLevelled = contractBarsState.isLevelled;
 
-    // Ensure outer container structure exists
+
     let card = container.querySelector('.contract-bars-card');
     if (!card) {
       container.innerHTML = `
@@ -666,7 +645,7 @@
         </div>
       `;
 
-      // Attach scale toggle listener
+
       const toggleBtn = container.querySelector('#btn-scale-toggle');
       if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
@@ -687,7 +666,7 @@
             caption.textContent = nowLevelled ? 'Same gold, same scale.' : 'Bar sizes are scaled for display';
           }
 
-          // Animate SVG heights smoothly (0.8s CSS transition)
+
           CONTRACT_BARS_SPECS.forEach(spec => {
             const barSvg = container.querySelector(`.contract-bar-svg[data-symbol="${spec.symbol}"]`);
             if (barSvg) {
@@ -831,16 +810,14 @@
     });
   }
 
-  // Expose ContractBars to window for reusability & automated testing
+
   window.ContractBars = {
     calculateBarHeight,
     renderContractBars,
     getState: () => ({ ...contractBarsState, selectedContract: state.selectedContract })
   };
 
-  // ==========================================
-  // FEATURE 1: CONTRACT CHOOSER & POSITION MATCHER
-  // ==========================================
+
   let chooserState = {
     quantityG: 100,
     selectedExpiry: null,
@@ -887,13 +864,13 @@
   function renderContractChooser(data) {
     if (!data || !data.data_available) return;
 
-    // 1. Update Provenance Badge
+
     const provBadge = document.getElementById('chooser-provenance-badge');
     if (provBadge && data.provenance_label) {
       provBadge.textContent = data.provenance_label;
     }
 
-    // 2. Populate Expiry Dropdown
+
     const expirySelect = document.getElementById('chooser-expiry-select');
     if (expirySelect && data.available_expiries && expirySelect.options.length === 0) {
       expirySelect.innerHTML = data.available_expiries.map(exp => `
@@ -903,14 +880,14 @@
       `).join('');
     }
 
-    // 3. Status announcement for exact match
+
     const statusEl = document.getElementById('chooser-exact-match-status');
     const exactMatches = (data.single_contracts || []).filter(c => c.is_exact_match);
     if (statusEl) {
       statusEl.textContent = `${exactMatches.length} of 4 contracts achieve exact ${data.quantity_g}g match`;
     }
 
-    // 4. Render Single-Contract Cards
+
     const cardsGrid = document.getElementById('chooser-cards-grid');
     if (!cardsGrid || !data.single_contracts) return;
 
@@ -1795,7 +1772,7 @@
       const badgeText = isRealData ? 'MCX Real Data (59 Trading Days)' : 'Demo Data (Needs ~100 days)';
       const badgeColor = isRealData ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/10 text-amber-300 border-amber-500/30';
       const explanation = verdict?.headline_conclusion || 'Walk-forward backtest executed across 60% build / 40% unseen periods.';
-      
+
       const breakevenNum = verdict?.breakeven_cost_per_leg;
       let breakevenDisplay = '0.00 bps/leg';
       if (breakevenNum != null) {
@@ -1875,7 +1852,7 @@
       attrCard.innerHTML = `
         <div class="gl-card p-5 mt-6">
           <h4 class="text-base font-semibold text-slate-100 mb-4">Strategy Alpha vs. Physical Gold Movement Attribution</h4>
-          
+
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-sm">
             <div class="p-3.5 gl-card-subtle">
               <span class="text-slate-300 block mb-1">Relative-Value Alpha</span>
@@ -2400,7 +2377,7 @@
       ctx.setLineDash([4, 4]);
       ctx.strokeStyle = 'rgba(240, 112, 122, 0.55)';
       ctx.lineWidth = 1.2;
-      
+
       ctx.beginPath();
       ctx.moveTo(padL, y2pos);
       ctx.lineTo(padL + pw, y2pos);
@@ -3228,9 +3205,12 @@
       welcome.className = 'ai-msg ai-msg-assistant';
       welcome.innerHTML = `
         <h3>👋 Welcome to KARAT AI Guide</h3>
-        <p>I am your quantitative commodity derivatives assistant for <strong>MCX Gold Futures</strong>. I analyze real calculations across all 5 screens.</p>
-        <p>Click a suggested prompt above or ask anything about purity normalisation, Z-scores, 4-leg trading costs, or delivery rules.</p>
-        <span class="ai-msg-time">Just now • Context-Aware</span>
+        <p>I am your quantitative commodity derivatives assistant for <strong>MCX Gold Futures</strong>. I analyze real calculations across all 6 screens.</p>
+        <p>Click a suggested prompt above, open Settings ⚙️ to configure your Gemini or Grok API key, or ask anything about purity normalisation, Z-scores, 4-leg trading costs, or delivery rules.</p>
+        <div class="ai-msg-meta">
+          <span class="ai-model-tag">⚡ KARAT Intelligence</span>
+          <span class="ai-msg-time">Just now</span>
+        </div>
       `;
       container.appendChild(welcome);
       return;
@@ -3239,18 +3219,36 @@
     aiChatState.history.forEach(msg => {
       const el = document.createElement('div');
       el.className = `ai-msg ${msg.role === 'user' ? 'ai-msg-user' : 'ai-msg-assistant'}`;
-      
+
       if (msg.role === 'user') {
         el.textContent = msg.content;
       } else {
         el.innerHTML = formatAiMarkdown(msg.content);
       }
-      
+
+      const metaRow = document.createElement('div');
+      metaRow.className = 'ai-msg-meta';
+
+      if (msg.role === 'assistant') {
+        const badge = document.createElement('span');
+        badge.className = 'ai-model-tag';
+        const modeLabels = {
+          'llm_gemini': '✨ Google Gemini',
+          'llm_grok': '🚀 xAI Grok',
+          'llm_groq': '⚡ Groq Llama 3.3',
+          'llm_openai': '🟢 GPT-4o',
+          'domain_engine': '⚡ KARAT Quant Engine'
+        };
+        badge.textContent = modeLabels[msg.mode] || '⚡ KARAT AI';
+        metaRow.appendChild(badge);
+      }
+
       const timeSpan = document.createElement('span');
       timeSpan.className = 'ai-msg-time';
       timeSpan.textContent = msg.time || 'Just now';
-      el.appendChild(timeSpan);
+      metaRow.appendChild(timeSpan);
 
+      el.appendChild(metaRow);
       container.appendChild(el);
     });
 
@@ -3479,10 +3477,16 @@
     const msgContainer = document.getElementById('ai-chat-messages');
     if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
 
+    // Get active provider & key preferences
+    const selectedProvider = localStorage.getItem('karat_ai_provider') || 'gemini';
+    const userApiKey = (localStorage.getItem('karat_ai_api_key') || '').trim();
+
     // Build context
     const currentTab = state.activeTab || 'overview';
     const payload = {
       message: cleanText,
+      provider: selectedProvider,
+      api_key: userApiKey || undefined,
       context: {
         active_tab: currentTab,
         data_source: state.dataSource || 'sample',
@@ -3497,8 +3501,9 @@
     };
 
     let finalReply = null;
+    let replyMode = 'domain_engine';
 
-    // Layer 1: Check backend /api/chat
+    // Layer 1: Call backend /api/chat with model provider & key
     try {
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
@@ -3510,37 +3515,74 @@
         const data = await res.json();
         if (data && data.reply) {
           finalReply = data.reply;
+          replyMode = data.mode || 'domain_engine';
         }
       }
     } catch (err) {
       console.warn('Backend /api/chat unreachable, checking client AI options:', err);
     }
 
-    // Layer 2: If backend returned general fallback or failed, and Puter.js free AI is loaded
+    // Layer 2: Client-side direct Google Gemini fallback if backend was offline and key provided
+    if (!finalReply && selectedProvider === 'gemini' && userApiKey) {
+      try {
+        const sysPrompt = `You are KARAT AI Guide, an expert quantitative commodity derivatives assistant for MCX Gold Futures embedded in the KARAT terminal.\nContext: Screen=${currentTab}, Selected Pair=${state.selectedPair || 'GOLDM_GOLDTEN'}, Cost Hurdle=${((state.costBps || 2.5) * 4).toFixed(1)} bps.\nContracts: GOLDM (100g, 995 fineness, ₹/10g), GOLDTEN (10g, 999 fineness, ₹/10g benchmark), GOLDGUINEA (8g, 999), GOLDPETAL (1g, 999).\nAnswer authoritatively, clearly and with quantitative precision in clean markdown.`;
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(userApiKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `${sysPrompt}\n\nUser Question: ${cleanText}` }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 1000
+            }
+          })
+        });
+        if (geminiRes.ok) {
+          const gemData = await geminiRes.json();
+          const cand = gemData?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (cand) {
+            finalReply = cand.trim();
+            replyMode = 'llm_gemini';
+          }
+        }
+      } catch (geminiErr) {
+        console.warn('Direct client Gemini fetch failed:', geminiErr);
+      }
+    }
+
+    // Layer 3: Puter.js free AI fallback
     if (!finalReply && window.puter && window.puter.ai && typeof window.puter.ai.chat === 'function') {
       try {
         const sysPrompt = `You are KARAT AI Guide, an expert quantitative assistant for MCX Gold Futures.
 Context: Page=${currentTab}, Pair=${state.selectedPair || 'GOLDM_GOLDTEN'}, Cost=${state.costBps || 2.5}bps/leg.
-Answer the user's question directly, clearly, and concisely in simple English. Explain terms, meaning, normalisation, or math.`;
+Answer clearly and concisely in markdown.`;
         const puterPromise = window.puter.ai.chat(`${sysPrompt}\n\nUser Question: ${cleanText}`, { model: 'gpt-4o-mini' });
         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
         const aiRes = await Promise.race([puterPromise, timeoutPromise]);
         if (aiRes) {
           finalReply = typeof aiRes === 'string' ? aiRes : (aiRes.message && aiRes.message.content) ? aiRes.message.content : String(aiRes);
+          replyMode = 'llm_openai';
         }
       } catch (e) {
         console.warn('Puter.js free AI unavailable or timed out:', e);
       }
     }
 
-    // Layer 3: Comprehensive Client Domain Engine
+    // Layer 4: Comprehensive Client Domain Engine fallback
     if (!finalReply) {
       finalReply = generateClientAiFallback(cleanText, currentTab);
+      replyMode = 'domain_engine';
     }
 
     aiChatState.history.push({
       role: 'assistant',
       content: finalReply,
+      mode: replyMode,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
 
@@ -3553,15 +3595,77 @@ Answer the user's question directly, clearly, and concisely in simple English. E
     const windowEl = document.getElementById('karat-ai-window');
     const btnMin = document.getElementById('ai-btn-minimize');
     const btnClear = document.getElementById('ai-btn-clear');
+    const btnSettings = document.getElementById('ai-btn-settings');
+    const settingsPanel = document.getElementById('ai-settings-panel');
+    const providerSelect = document.getElementById('ai-provider-select');
+    const apiKeyInput = document.getElementById('ai-api-key-input');
+    const btnSaveSettings = document.getElementById('ai-save-settings-btn');
+    const keyStatus = document.getElementById('ai-key-status');
+    const providerBadge = document.getElementById('ai-provider-badge');
     const form = document.getElementById('ai-chat-form');
     const input = document.getElementById('ai-chat-input');
 
     if (!launcher || !windowEl) return;
 
+    // Load saved settings
+    const savedProvider = localStorage.getItem('karat_ai_provider') || 'gemini';
+    const savedApiKey = localStorage.getItem('karat_ai_api_key') || '';
+    if (providerSelect) providerSelect.value = savedProvider;
+    if (apiKeyInput) apiKeyInput.value = savedApiKey;
+
+    function updateSettingsBadge() {
+      const prov = providerSelect ? providerSelect.value : savedProvider;
+      const hasKey = apiKeyInput && apiKeyInput.value.trim().length > 5;
+      if (providerBadge) {
+        if (hasKey) {
+          providerBadge.textContent = `${prov.toUpperCase()} Key Active`;
+          providerBadge.className = 'px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        } else {
+          providerBadge.textContent = 'Auto / Server Engine';
+          providerBadge.className = 'px-2 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30';
+        }
+      }
+      if (keyStatus) {
+        keyStatus.textContent = hasKey ? 'Custom API Key active for queries' : 'Ready: Backend / Free Engine active';
+      }
+    }
+    updateSettingsBadge();
+
+    if (btnSettings && settingsPanel) {
+      btnSettings.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsPanel.classList.toggle('hidden');
+        btnSettings.classList.toggle('text-amber-400');
+      });
+    }
+
+    if (providerSelect) {
+      providerSelect.addEventListener('change', () => {
+        localStorage.setItem('karat_ai_provider', providerSelect.value);
+        updateSettingsBadge();
+      });
+    }
+
+    if (btnSaveSettings) {
+      btnSaveSettings.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (providerSelect) localStorage.setItem('karat_ai_provider', providerSelect.value);
+        if (apiKeyInput) localStorage.setItem('karat_ai_api_key', apiKeyInput.value.trim());
+        updateSettingsBadge();
+        const origText = btnSaveSettings.textContent;
+        btnSaveSettings.textContent = 'Saved!';
+        btnSaveSettings.classList.add('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+        setTimeout(() => {
+          btnSaveSettings.textContent = origText;
+          btnSaveSettings.classList.remove('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+        }, 1500);
+      });
+    }
+
     function toggleChat(open) {
       const shouldOpen = open !== undefined ? open : !aiChatState.isOpen;
       aiChatState.isOpen = shouldOpen;
-      
+
       if (shouldOpen) {
         windowEl.classList.add('is-open');
         windowEl.setAttribute('aria-hidden', 'false');

@@ -51,7 +51,7 @@ MONTH_MAP = {
     "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
 }
 
-# Known statutory market holidays for MCX Gold Futures
+
 MCX_STATUTORY_HOLIDAYS = {
     "2026-10-02": "Mahatma Gandhi Jayanti (statutory national market holiday on MCX)"
 }
@@ -144,8 +144,7 @@ def build_karat_clean_csv(
                     inst = r.get("Instrument Name", "").strip()
                     sym = r.get("Symbol", "").strip()
 
-                    # In MCX Bhavcopy, commodity futures are instrument FUTCOM
-                    # Commodity-wise files are dedicated FUTCOM records for gold contracts
+
                     if (inst != "FUTCOM" and not is_commodity_wise) or sym not in LOT_SIZES:
                         reasons_count["non_tracked_symbol"] += 1
                         continue
@@ -228,7 +227,7 @@ def build_karat_clean_csv(
                 "reason": f"file_read_error: {str(ex)}"
             })
 
-    # Group records by (date, symbol, expiry_date) to detect conflicts and duplicates
+
     grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in raw_rows:
         key = (row["date"], row["symbol"], row["expiry_date"])
@@ -245,10 +244,10 @@ def build_karat_clean_csv(
         if len(cand_rows) == 1:
             clean_rows.append(cand_rows[0])
         else:
-            # Check price conflict
+
             closes = set(r["close"] for r in cand_rows)
             if len(closes) > 1:
-                # Log conflict
+
                 conflict_entry = {
                     "key": {"date": key[0], "symbol": key[1], "expiry_date": key[2]},
                     "closes_observed": list(closes),
@@ -256,10 +255,10 @@ def build_karat_clean_csv(
                     "resolution": "selected_row_with_higher_volume"
                 }
                 price_conflicts.append(conflict_entry)
-                # Resolve deterministically: prefer traded row (highest volume)
+
                 selected = max(cand_rows, key=lambda r: (r["volume_lots"], r["source_file"]))
             else:
-                # All closes match: deterministic deduplication, keep the latest source file
+
                 selected = sorted(cand_rows, key=lambda r: r["source_file"])[-1]
 
             clean_rows.append(selected)
@@ -268,7 +267,7 @@ def build_karat_clean_csv(
     if not df.empty:
         df = df.sort_values(["date", "symbol", "expiry_date"]).reset_index(drop=True)
 
-    # Save CSVs
+
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_csv, index=False)
 
@@ -279,7 +278,7 @@ def build_karat_clean_csv(
     dates = sorted(df["date"].unique().tolist()) if not df.empty else []
     no_trade_count = int(df["no_trade"].sum()) if not df.empty else 0
 
-    # Weekdays & Trading Calendar Verification
+
     missing_weekdays: list[str] = []
     known_holidays: dict[str, str] = {}
     unexplained_missing: list[str] = []
@@ -289,7 +288,7 @@ def build_karat_clean_csv(
         cur = date_objs[0]
         end = date_objs[-1]
         while cur <= end:
-            if cur.weekday() < 5:  # Monday to Friday
+            if cur.weekday() < 5:
                 iso = cur.isoformat()
                 if cur not in date_objs:
                     missing_weekdays.append(iso)
@@ -299,7 +298,7 @@ def build_karat_clean_csv(
                         unexplained_missing.append(iso)
             cur += dt.timedelta(days=1)
 
-    # Detailed row breakdown
+
     counts_by_contract = df["symbol"].value_counts().to_dict() if not df.empty else {}
     contract_expiry_counts = (
         df.groupby(["symbol", "expiry_date"]).size().to_dict()
@@ -346,7 +345,7 @@ def build_karat_clean_csv(
         "rejections_by_reason": reasons_count,
     }
 
-    # Save to clean dir and root
+
     with open(QUALITY_REPORT_PATH, "w", encoding="utf-8") as f:
         json.dump(quality_report, f, indent=2)
 

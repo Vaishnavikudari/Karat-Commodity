@@ -76,7 +76,7 @@ def get_normalised_snapshot(
     day_df = df[df["Date"] == target_date]
 
     if day_df.empty:
-        # Fall back to closest available date
+
         dates = df["Date"].sort_values().unique()
         if len(dates) == 0:
             return []
@@ -84,23 +84,23 @@ def get_normalised_snapshot(
         target_date = dates[closest_idx]
         day_df = df[df["Date"] == target_date]
 
-    # For each symbol, pick the nearest-expiry contract (most liquid)
+
     results = []
     ref_norm_price = None
 
-    # First pass: find reference price
+
     for symbol in TRACKED_SYMBOLS:
         sym_df = day_df[day_df["Symbol"] == symbol].copy()
         if sym_df.empty:
             continue
-        # Pick nearest expiry
+
         sym_df = sym_df.sort_values("ExpiryDate")
         row = sym_df.iloc[0]
         if symbol == reference_symbol:
             ref_norm_price = row["NormalisedPrice"]
             break
 
-    # If reference not found, use first available
+
     if ref_norm_price is None or ref_norm_price == 0:
         for symbol in TRACKED_SYMBOLS:
             sym_df = day_df[day_df["Symbol"] == symbol]
@@ -112,9 +112,9 @@ def get_normalised_snapshot(
                     break
 
     if ref_norm_price is None or ref_norm_price == 0:
-        ref_norm_price = 1.0  # Avoid division by zero
+        ref_norm_price = 1.0
 
-    # Second pass: build results
+
     for symbol in TRACKED_SYMBOLS:
         spec = CONTRACTS[symbol]
         sym_df = day_df[day_df["Symbol"] == symbol].copy()
@@ -162,7 +162,7 @@ def get_normalised_snapshot(
             else:
                 liquidity = "liquid"
 
-            # Try to compute daily change
+
             prev_dates = df[
                 (df["Symbol"] == symbol)
                 & (df["Date"] < target_date)
@@ -212,7 +212,7 @@ def get_sparkline_data(
     if sym_df.empty:
         return []
 
-    # For each date, pick the nearest-expiry contract
+
     latest_dates = sym_df["Date"].sort_values().unique()[-days:]
     points = []
     for d in latest_dates:

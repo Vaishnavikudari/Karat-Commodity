@@ -53,10 +53,6 @@ from backend.calendar.lifecycle import get_contract_calendar, get_upcoming_expir
 from backend.api.ai_guide import ChatRequest, ChatResponse, ask_ai_guide
 
 
-# ==========================================
-# PYDANTIC RESPONSE MODELS
-# ==========================================
-
 class HealthResponse(BaseModel):
     project: str = "KARAT"
     status: str = "online"
@@ -110,17 +106,13 @@ class MethodologyResponse(BaseModel):
     limitations: List[str]
 
 
-# ==========================================
-# APP INITIALIZATION
-# ==========================================
-
 app = FastAPI(
     title="KARAT API",
     description="Cross-contract relative-value intelligence for MCX gold futures",
     version="1.0.0",
 )
 
-# Enable CORS for frontend local development
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -129,7 +121,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global dataset cache with reload capability
+
 _DATA_CACHE = None
 _DATA_SOURCE = None
 
@@ -157,9 +149,6 @@ def read_root():
     }
 
 
-# ==========================================
-# 1. CONTRACTS & MARKET SUMMARY
-# ==========================================
 @app.get("/contracts", response_model=ContractsResponse)
 @app.get("/api/contracts", response_model=ContractsResponse)
 def get_contracts(
@@ -198,9 +187,6 @@ def get_contracts(
     }
 
 
-# ==========================================
-# 2. SPREAD LAB & ANALYTICS
-# ==========================================
 @app.get("/spread")
 @app.get("/api/spread")
 def get_spread(
@@ -212,7 +198,7 @@ def get_spread(
     window: int = Query(ZSCORE_WINDOW),
     cost_per_leg_bps: float = Query(DEFAULT_COST_PER_LEG_BPS),
 ):
-    # Resolve pair symbols
+
     sym_a = "GOLDM"
     sym_b = "GOLDTEN"
     if pair:
@@ -228,13 +214,13 @@ def get_spread(
     summary = get_spread_summary(df, sym_a, sym_b, window, cost_per_leg_bps)
     chart_data = get_spread_chart_data(df, sym_a, sym_b, window)
 
-    # Optional date filtering
+
     if from_date:
         chart_data = [pt for pt in chart_data if pt["date"] >= from_date]
     if to_date:
         chart_data = [pt for pt in chart_data if pt["date"] <= to_date]
 
-    # Pre-generate 3D Terrain mesh data for the pair
+
     terrain_points = []
     for idx, pt in enumerate(chart_data[-40:]):
         terrain_points.append({
@@ -256,9 +242,6 @@ def get_spread(
     }
 
 
-# ==========================================
-# 3. SIGNALS & ALERTS
-# ==========================================
 @app.get("/signal")
 @app.get("/api/signal")
 def get_signal(
@@ -290,7 +273,7 @@ def get_signal(
         df_filtered, window=window, cost_per_leg_bps=cost_per_leg_bps
     )
 
-    # Quiet output rule: if no qualifying signal, explicitly set signal="none"
+
     signal_output = pair_signal["action"] if pair_signal.get("has_signal") else "none"
 
     return {
@@ -304,9 +287,6 @@ def get_signal(
     }
 
 
-# ==========================================
-# 4. STRATEGY BACKTESTING
-# ==========================================
 @app.get("/backtest")
 @app.get("/api/backtest")
 def get_backtest(
@@ -378,9 +358,6 @@ def get_backtest(
     return results
 
 
-# ==========================================
-# 5. TERM STRUCTURE
-# ==========================================
 @app.get("/curve")
 @app.get("/api/curve")
 def get_curve(
@@ -421,9 +398,6 @@ def get_curve_regimes(
     }
 
 
-# ==========================================
-# 6. CONTRACT CALENDAR
-# ==========================================
 @app.get("/calendar")
 @app.get("/api/calendar")
 def get_calendar():
@@ -461,9 +435,6 @@ def get_calendar():
     return cal
 
 
-# ==========================================
-# 7. DATA QUALITY & REJECTION AUDIT
-# ==========================================
 @app.get("/quality")
 @app.get("/api/quality")
 def get_quality():
@@ -471,9 +442,6 @@ def get_quality():
     return get_data_quality_report(df, source)
 
 
-# ==========================================
-# 8. CSV & DATA EXPORTS
-# ==========================================
 @app.get("/export/trades.csv")
 @app.get("/api/export/trades.csv")
 def export_trades_csv(
@@ -637,9 +605,6 @@ def export_quality_json():
     )
 
 
-# ==========================================
-# 9. METHODOLOGY & LIMITATIONS
-# ==========================================
 @app.get("/methodology", response_model=MethodologyResponse)
 @app.get("/api/methodology", response_model=MethodologyResponse)
 def get_methodology():
@@ -686,9 +651,6 @@ def get_methodology():
     }
 
 
-# ==========================================
-# 8. KARAT AI GUIDE ENDPOINT
-# ==========================================
 @app.post("/chat", response_model=ChatResponse)
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_with_ai(request: ChatRequest):
@@ -700,9 +662,6 @@ async def chat_with_ai(request: ChatRequest):
     return await ask_ai_guide(request)
 
 
-# ==========================================
-# 9. POSITION MATCHER & CONTRACT CHOOSER
-# ==========================================
 from backend.analytics.position_matcher import compute_position_matcher
 from backend.analytics.daily_briefing import compute_daily_briefing
 from backend.analytics.guardrails import get_prewritten_explanation, validate_ai_output
@@ -724,9 +683,6 @@ def get_position_matcher(
     )
 
 
-# ==========================================
-# 10. DAILY BRIEFING
-# ==========================================
 @app.get("/daily-briefing")
 @app.get("/api/daily-briefing")
 def get_daily_briefing():
@@ -734,9 +690,6 @@ def get_daily_briefing():
     return compute_daily_briefing(df=df)
 
 
-# ==========================================
-# 11. EXPLAIN THIS PANEL (WITH GUARDRAILS)
-# ==========================================
 class ExplainPanelRequest(BaseModel):
     panel_id: str
     panel_title: Optional[str] = None
@@ -768,9 +721,6 @@ async def explain_panel(req: ExplainPanelRequest):
     }
 
 
-# ==========================================
-# 12. STATIC FRONTEND MOUNT
-# ==========================================
 STATIC_DIR = Path(__file__).resolve().parent.parent.parent
 
 

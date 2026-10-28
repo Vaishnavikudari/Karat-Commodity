@@ -33,35 +33,31 @@ from backend.analytics.guardrails import (
 from backend.data.parser import load_clean
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 1. LOTS AND LEFTOVER MATHS
-# ──────────────────────────────────────────────────────────────────────
-
 def test_lots_and_leftover_math_100g():
     mock_row = {"close": 145000.0, "norm_close": 14500.0, "expiry_date": "2026-10-30", "grams_traded": 10000.0}
 
-    # GOLDM (100g lot)
+
     res_m = compute_single_contract_match("GOLDM", 100.0, mock_row)
     assert res_m["lots_needed"] == 1
     assert res_m["grams_covered"] == 100.0
     assert res_m["leftover_grams"] == 0.0
     assert res_m["is_exact_match"] is True
 
-    # GOLDTEN (10g lot)
+
     res_t = compute_single_contract_match("GOLDTEN", 100.0, mock_row)
     assert res_t["lots_needed"] == 10
     assert res_t["grams_covered"] == 100.0
     assert res_t["leftover_grams"] == 0.0
     assert res_t["is_exact_match"] is True
 
-    # GOLDGUINEA (8g lot)
+
     res_g = compute_single_contract_match("GOLDGUINEA", 100.0, mock_row)
     assert res_g["lots_needed"] == 12
     assert res_g["grams_covered"] == 96.0
     assert res_g["leftover_grams"] == 4.0
     assert res_g["is_exact_match"] is False
 
-    # GOLDPETAL (1g lot)
+
     res_p = compute_single_contract_match("GOLDPETAL", 100.0, mock_row)
     assert res_p["lots_needed"] == 100
     assert res_p["grams_covered"] == 100.0
@@ -72,28 +68,28 @@ def test_lots_and_leftover_math_100g():
 def test_lots_and_leftover_math_8g():
     mock_row = {"close": 145000.0, "norm_close": 14500.0, "expiry_date": "2026-10-30", "grams_traded": 10000.0}
 
-    # GOLDGUINEA (8g) -> 1 lot exact
+
     res_g = compute_single_contract_match("GOLDGUINEA", 8.0, mock_row)
     assert res_g["lots_needed"] == 1
     assert res_g["grams_covered"] == 8.0
     assert res_g["leftover_grams"] == 0.0
     assert res_g["is_exact_match"] is True
 
-    # GOLDPETAL (1g) -> 8 lots exact
+
     res_p = compute_single_contract_match("GOLDPETAL", 8.0, mock_row)
     assert res_p["lots_needed"] == 8
     assert res_p["grams_covered"] == 8.0
     assert res_p["leftover_grams"] == 0.0
     assert res_p["is_exact_match"] is True
 
-    # GOLDTEN (10g) -> 0 lots, 8g leftover
+
     res_t = compute_single_contract_match("GOLDTEN", 8.0, mock_row)
     assert res_t["lots_needed"] == 0
     assert res_t["grams_covered"] == 0.0
     assert res_t["leftover_grams"] == 8.0
     assert res_t["is_exact_match"] is False
 
-    # GOLDM (100g) -> 0 lots, 8g leftover
+
     res_m = compute_single_contract_match("GOLDM", 8.0, mock_row)
     assert res_m["lots_needed"] == 0
     assert res_m["grams_covered"] == 0.0
@@ -104,31 +100,27 @@ def test_lots_and_leftover_math_8g():
 def test_lots_and_leftover_math_10g():
     mock_row = {"close": 145000.0, "norm_close": 14500.0, "expiry_date": "2026-10-30", "grams_traded": 10000.0}
 
-    # GOLDTEN (10g) -> 1 lot exact
+
     res_t = compute_single_contract_match("GOLDTEN", 10.0, mock_row)
     assert res_t["lots_needed"] == 1
     assert res_t["grams_covered"] == 10.0
     assert res_t["leftover_grams"] == 0.0
     assert res_t["is_exact_match"] is True
 
-    # GOLDGUINEA (8g) -> 1 lot, 8g covered, 2g leftover
+
     res_g = compute_single_contract_match("GOLDGUINEA", 10.0, mock_row)
     assert res_g["lots_needed"] == 1
     assert res_g["grams_covered"] == 8.0
     assert res_g["leftover_grams"] == 2.0
     assert res_g["is_exact_match"] is False
 
-    # GOLDPETAL (1g) -> 10 lots exact
+
     res_p = compute_single_contract_match("GOLDPETAL", 10.0, mock_row)
     assert res_p["lots_needed"] == 10
     assert res_p["grams_covered"] == 10.0
     assert res_p["leftover_grams"] == 0.0
     assert res_p["is_exact_match"] is True
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 2. COMBINATIONS GENERATION (FEWEST LOTS)
-# ──────────────────────────────────────────────────────────────────────
 
 def test_find_exact_contract_combinations_100g():
     contracts_data = {
@@ -144,23 +136,19 @@ def test_find_exact_contract_combinations_100g():
     assert all(c["leftover_grams"] == 0.0 for c in combos)
     assert all(c["grams_covered"] == 100.0 for c in combos)
 
-    # Check top solutions
+
     labels = [c["label"] for c in combos]
     assert any("GOLDM" in l for l in labels)
     assert any("GOLDTEN" in l for l in labels)
 
-    # Check that lots are ascending or optimal
+
     lots = [c["total_lots"] for c in combos]
     assert lots == sorted(lots)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 3. BEST FIT ORDERING
-# ──────────────────────────────────────────────────────────────────────
-
 def test_best_fit_ranking_exact_match_and_premium():
     single_matches = [
-        # Partial match, low premium
+
         {
             "symbol": "GOLDGUINEA",
             "lots_needed": 12,
@@ -169,7 +157,7 @@ def test_best_fit_ranking_exact_match_and_premium():
             "premium_vs_goldten_bps": -5.0,
             "grams_traded": 50000.0,
         },
-        # Exact match, high premium
+
         {
             "symbol": "GOLDPETAL",
             "lots_needed": 100,
@@ -178,7 +166,7 @@ def test_best_fit_ranking_exact_match_and_premium():
             "premium_vs_goldten_bps": 55.0,
             "grams_traded": 100000.0,
         },
-        # Exact match, lowest premium
+
         {
             "symbol": "GOLDTEN",
             "lots_needed": 10,
@@ -190,16 +178,12 @@ def test_best_fit_ranking_exact_match_and_premium():
     ]
 
     best_fit = rank_best_fit(single_matches, combinations=[], sample_history_days=2)
-    # GOLDTEN should win: exact match + lowest premium
+
     assert best_fit["best_fit_id"] == "GOLDTEN"
     assert "exact match first, then lowest premium" in best_fit["rule_tooltip"]
     assert best_fit["caveat_note"] is not None
     assert "Historical sample is short" in best_fit["caveat_note"]
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 4. PREMIUM USES SAME EXPIRY & GOLDM FLAGGED FOR LATER EXPIRY
-# ──────────────────────────────────────────────────────────────────────
 
 def test_premium_uses_same_expiry_and_goldm_flagged():
     goldten_row = {
@@ -208,7 +192,7 @@ def test_premium_uses_same_expiry_and_goldm_flagged():
         "norm_close": 14500.0,
     }
 
-    # Contract with SAME expiry
+
     petal_row = {
         "symbol": "GOLDPETAL",
         "expiry_date": "2026-10-30",
@@ -218,11 +202,11 @@ def test_premium_uses_same_expiry_and_goldm_flagged():
         "volume_lots": 5000,
     }
     match_petal = compute_single_contract_match("GOLDPETAL", 10.0, petal_row, goldten_row)
-    # (14580 - 14500) / 14500 * 10000 = +55.17 bps
+
     assert match_petal["premium_vs_goldten_bps"] == pytest.approx(55.17, rel=0.01)
     assert match_petal["later_expiry_note"] is None
 
-    # GOLDM with LATER expiry (2026-11-05 vs 2026-10-30)
+
     goldm_row = {
         "symbol": "GOLDM",
         "expiry_date": "2026-11-05",
@@ -237,10 +221,6 @@ def test_premium_uses_same_expiry_and_goldm_flagged():
     assert "expires on 2026-11-05" in match_goldm["later_expiry_note"]
     assert "after GOLDTEN" in match_goldm["later_expiry_note"]
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 5. NO_TRADE EXCLUDED FROM VOLUME SHARE
-# ──────────────────────────────────────────────────────────────────────
 
 def test_no_trade_excluded():
     row_no_trade = {
@@ -258,10 +238,6 @@ def test_no_trade_excluded():
     assert match["share_of_day_volume_pct"] is None
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 6. DAILY BRIEFING FIGURES EQUAL CSV VALUES
-# ──────────────────────────────────────────────────────────────────────
-
 def test_daily_briefing_matches_karat_clean_csv():
     df = load_clean()
     briefing = compute_daily_briefing(df)
@@ -271,16 +247,16 @@ def test_daily_briefing_matches_karat_clean_csv():
     assert briefing["as_of_date"] == "2026-10-23"
     assert briefing["previous_date"] == "2026-10-22"
 
-    # Price changes should match actual values in karat_clean.csv
+
     price_changes = {p["symbol"]: p for p in briefing["price_changes"]}
     assert "GOLDM" in price_changes
     assert "GOLDTEN" in price_changes
 
-    # GOLDTEN on latest date: norm_close should be positive
+
     goldten_p = price_changes["GOLDTEN"]
     assert goldten_p["norm_close"] > 0
 
-    # Facts list and template summary
+
     assert len(briefing["facts_list"]) >= 4
     assert briefing["template_word_count"] <= 80
     assert len(briefing["template_summary"]) > 20
@@ -295,10 +271,6 @@ def test_daily_briefing_fewer_than_2_days():
     assert "Not enough data yet" in briefing["message"]
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 7. AI OUTPUT REJECTED WHEN IT ADDS UNSUPPORTED NUMBERS
-# ──────────────────────────────────────────────────────────────────────
-
 def test_validate_ai_output_accepts_valid_numbers():
     payload = {
         "as_of_date": "2026-10-14",
@@ -308,7 +280,7 @@ def test_validate_ai_output_accepts_valid_numbers():
         "lots": 10,
     }
 
-    # Text using only numbers from payload
+
     valid_text = "On 2026-10-14, with 10 lots covering 100 grams, the spread was 14.87 bps at a price of ₹14,506.20."
     is_valid, unsupported = validate_ai_output(valid_text, payload)
     assert is_valid is True
@@ -322,16 +294,12 @@ def test_validate_ai_output_rejects_hallucinated_numbers():
         "spread_bps": 14.87,
     }
 
-    # Text contains hallucinated 88.5 bps and 99.9%
+
     bad_text = "The system achieved an expected net return of 88.5 bps with 99.9% confidence."
     is_valid, unsupported = validate_ai_output(bad_text, payload)
     assert is_valid is False
     assert 88.5 in unsupported
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 8. PREWRITTEN PANEL EXPLANATIONS CONFORM TO RULES
-# ──────────────────────────────────────────────────────────────────────
 
 def test_prewritten_explanations_conform_to_rules():
     panels = ["contracts_table", "contract_chooser", "gap_chart", "signal_card", "daily_briefing"]
@@ -342,17 +310,13 @@ def test_prewritten_explanations_conform_to_rules():
         assert "body" in exp
         assert "caveat" in exp
 
-        # Body: 2-3 sentences
+
         sentences = [s.strip() for s in exp["body"].split(".") if s.strip()]
         assert 2 <= len(sentences) <= 4, f"Panel {pid} body should have 2-3 sentences"
 
-        # Caveat: must start with 'What this does not tell you'
+
         assert exp["caveat"].startswith("What this does not tell you:"), f"Panel {pid} caveat must start with 'What this does not tell you:'"
 
-
-# ──────────────────────────────────────────────────────────────────────
-# 9. API ENDPOINTS FOR STEP 1
-# ──────────────────────────────────────────────────────────────────────
 
 def test_api_position_matcher_endpoint():
     from fastapi.testclient import TestClient

@@ -37,9 +37,6 @@ from backend.config import (
 
 logger = logging.getLogger(__name__)
 
-# ──────────────────────────────────────────────────────────────────────
-# Expiry date parser
-# ──────────────────────────────────────────────────────────────────────
 
 _MONTH_MAP = {
     "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
@@ -68,7 +65,7 @@ def parse_expiry_date(s: str) -> dt.date | None:
             except ValueError:
                 pass
 
-    # Fallback formats
+
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"):
         try:
             return dt.datetime.strptime(s, fmt).date()
@@ -93,10 +90,6 @@ def parse_response_date(s: str) -> dt.date | None:
     return None
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Clean one file
-# ──────────────────────────────────────────────────────────────────────
-
 _NUMERIC_COLS = ["Open", "High", "Low", "Close", "Volume", "OpenInterest"]
 
 
@@ -109,7 +102,7 @@ def _clean_file(path: Path) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     """
     rejections: list[dict[str, Any]] = []
 
-    # Try utf-8 first, then utf-8-sig
+
     for enc in ("utf-8", "utf-8-sig", "latin-1"):
         try:
             df = pd.read_csv(path, encoding=enc, dtype=str)
@@ -125,9 +118,9 @@ def _clean_file(path: Path) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
 
     raw_row_count = len(df)
 
-    # Normalise column names (strip whitespace, consistent casing)
+
     df.columns = df.columns.str.strip()
-    # Try to map common variants
+
     col_map = {}
     for col in df.columns:
         lc = col.lower().replace(" ", "").replace("_", "")
@@ -151,11 +144,11 @@ def _clean_file(path: Path) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
             col_map[col] = "OpenInterest"
     df = df.rename(columns=col_map)
 
-    # Strip symbol whitespace (trap #3)
+
     if "Symbol" in df.columns:
         df["Symbol"] = df["Symbol"].str.strip()
 
-    # Filter to tracked symbols
+
     if "Symbol" in df.columns:
         mask = df["Symbol"].isin(TRACKED_SYMBOLS)
         rejected_symbols = df.loc[~mask, "Symbol"].unique().tolist()
@@ -171,7 +164,7 @@ def _clean_file(path: Path) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     if df.empty:
         return pd.DataFrame(), rejections
 
-    # Parse dates
+
     if "Date" in df.columns:
         df["Date"] = df["Date"].apply(
             lambda x: parse_response_date(str(x)) if pd.notna(x) else None
@@ -185,7 +178,7 @@ def _clean_file(path: Path) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
             })
             df = df.loc[~bad_dates].copy()
 
-    # Check for date mismatch against filename date (e.g. bhavcopy_YYYY-MM-DD.csv)
+
     file_date_match = re.search(r"bhavcopy_(\d{4}-\d{2}-\d{2})\.csv", path.name)
     if file_date_match and "Date" in df.columns:
         try:
@@ -219,17 +212,16 @@ def _clean_file(path: Path) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     if df.empty:
         return pd.DataFrame(), rejections
 
-    # Parse numerics
+
     for col in _NUMERIC_COLS:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col].str.replace(",", ""), errors="coerce")
 
-    # Flag zero-volume rows (don't drop — just flag)
+
     if "Volume" in df.columns:
         df["ZeroVolume"] = df["Volume"] == 0
 
-    # Flag price outliers: Close that is > 3 std from the per-symbol mean
-    # or deviates by > 2x / < 0.5x from the per-symbol median
+
     df["PriceOutlier"] = False
     if "Close" in df.columns and "Symbol" in df.columns:
         for sym in df["Symbol"].unique():
@@ -253,10 +245,6 @@ def _clean_file(path: Path) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     df.attrs["raw_rows"] = raw_row_count
     return df, rejections
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Build clean dataset
-# ──────────────────────────────────────────────────────────────────────
 
 def build_clean_dataset(
     raw_dir: Path = RAW_DIR,
@@ -293,27 +281,27 @@ def build_clean_dataset(
 
     combined = pd.concat(frames, ignore_index=True)
 
-    # Deduplicate by (Symbol, ExpiryDate, Date)
+
     key_cols = ["Symbol", "ExpiryDate", "Date"]
     before = len(combined)
     combined = combined.drop_duplicates(subset=key_cols, keep="last")
     dupes = before - len(combined)
 
-    # Sort
+
     combined = combined.sort_values(key_cols).reset_index(drop=True)
 
-    # Ensure Date columns are proper types for Parquet
+
     combined["Date"] = pd.to_datetime(combined["Date"])
     combined["ExpiryDate"] = pd.to_datetime(combined["ExpiryDate"])
 
-    # Write
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     combined.to_parquet(output_path, index=False, engine="pyarrow")
     logger.info(
         "Wrote %d clean rows to %s", len(combined), output_path
     )
 
-    # Quality report
+
     report = _quality_report(combined, all_rejections, dupes, len(raw_files), raw_rows_loaded=total_raw_rows)
     return report
 
@@ -330,7 +318,7 @@ def _quality_report(
     zero_vol = int(df["ZeroVolume"].sum()) if "ZeroVolume" in df.columns else 0
     outliers = int(df["PriceOutlier"].sum()) if "PriceOutlier" in df.columns else 0
 
-    # Missing trading days
+
     missing_day_flags: list[dict] = []
     if "Date" in df.columns and "Symbol" in df.columns:
         for sym in df["Symbol"].unique():
@@ -338,7 +326,7 @@ def _quality_report(
             if len(dates) < 2:
                 continue
             gaps = dates.diff().dt.days
-            big_gaps = gaps[gaps > 4]  # > 4 calendar days ≈ missing trading day
+            big_gaps = gaps[gaps > 4]
             for idx in big_gaps.index:
                 missing_day_flags.append({
                     "symbol": sym,
@@ -390,10 +378,6 @@ def _quality_report(
         "raw_files_cached_untouched": True,
     }
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Data Status and Purity Validation
-# ──────────────────────────────────────────────────────────────────────
 
 def validate_dataset_purity(df: pd.DataFrame, source: str) -> bool:
     """Ensure dataset strictly contains only real or demo rows, never mixed."""
@@ -448,7 +432,7 @@ def get_data_status(
     if required_symbols is None:
         required_symbols = list(TRACKED_SYMBOLS)
 
-    # Check date-specific completeness if target date is provided
+
     if date is not None:
         if isinstance(date, str):
             try:
@@ -472,7 +456,7 @@ def get_data_status(
             return "incomplete", last_verified_trading_date
 
         present_symbols = set(date_slice["Symbol"].unique())
-        # GOLDTEN listing start: April 2025
+
         expected = [
             s for s in required_symbols
             if not (s == "GOLDTEN" and target_dt < dt.date(2025, 4, 1))
@@ -480,7 +464,7 @@ def get_data_status(
         if not set(expected).issubset(present_symbols):
             return "incomplete", last_verified_trading_date
     else:
-        # Check latest trading day
+
         latest_dt = (
             last_val.date()
             if hasattr(last_val, "date")
@@ -500,7 +484,7 @@ def get_data_status(
         if not set(expected).issubset(present_symbols):
             return "incomplete", last_verified_trading_date
 
-    # Check for missing trading days (gaps > 4 calendar days per symbol)
+
     for sym in required_symbols:
         sym_dates = df.loc[df["Symbol"] == sym, "Date"].drop_duplicates().sort_values()
         if len(sym_dates) >= 2:
@@ -657,10 +641,6 @@ def get_data_quality_report(
         "raw_cache_count": len(csv_files),
     }
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Load clean data
-# ──────────────────────────────────────────────────────────────────────
 
 def load_clean(path: Path = PARQUET_PATH) -> pd.DataFrame:
     """Load the clean Parquet dataset."""

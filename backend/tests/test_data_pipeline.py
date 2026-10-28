@@ -31,10 +31,6 @@ from backend.data.downloader import DateMismatchError
 from backend.config import SAMPLE_DIR, TRACKED_SYMBOLS
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Expiry date parsing
-# ──────────────────────────────────────────────────────────────────────
-
 class TestExpiryParsing:
     def test_standard_mcx_format(self):
         assert parse_expiry_date("04SEP2026") == dt.date(2026, 9, 4)
@@ -61,7 +57,7 @@ class TestExpiryParsing:
         assert parse_expiry_date("  04SEP2026  ") == dt.date(2026, 9, 4)
 
     def test_lowercase_accepted(self):
-        # Our parser uppercases, so lowercase should work
+
         assert parse_expiry_date("04sep2026") == dt.date(2026, 9, 4)
 
     def test_iso_fallback(self):
@@ -73,10 +69,6 @@ class TestExpiryParsing:
     def test_garbage_returns_none(self):
         assert parse_expiry_date("NOTADATE") is None
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Response date parsing (DD/MM vs MM/DD trap)
-# ──────────────────────────────────────────────────────────────────────
 
 class TestResponseDateParsing:
     def test_mm_dd_yyyy(self):
@@ -96,10 +88,6 @@ class TestResponseDateParsing:
         assert parse_response_date("notadate") is None
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Symbol stripping
-# ──────────────────────────────────────────────────────────────────────
-
 class TestSymbolStripping:
     def test_space_padded_symbol_cleaned(self, tmp_path):
         """Symbols with whitespace padding should be stripped."""
@@ -114,14 +102,10 @@ class TestSymbolStripping:
         df, rejections = _clean_file(csv_path)
         assert len(df) == 2
         assert set(df["Symbol"].unique()) == {"GOLDM", "GOLDTEN"}
-        # No whitespace in symbol names
+
         for sym in df["Symbol"]:
             assert sym == sym.strip()
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Non-gold symbols are filtered out
-# ──────────────────────────────────────────────────────────────────────
 
 class TestSymbolFiltering:
     def test_non_gold_rejected(self, tmp_path):
@@ -137,14 +121,10 @@ class TestSymbolFiltering:
         df, rejections = _clean_file(csv_path)
         assert len(df) == 1
         assert df.iloc[0]["Symbol"] == "GOLDM"
-        # Should have a rejection for non-gold symbols
+
         rej_reasons = [r["reason"] for r in rejections]
         assert "non_gold_symbol" in rej_reasons
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Data identity: keyed by (symbol, expiry_date)
-# ──────────────────────────────────────────────────────────────────────
 
 class TestDataIdentity:
     def test_multiple_expiries_per_symbol_preserved(self):
@@ -153,21 +133,17 @@ class TestDataIdentity:
         one for each expiry. We NEVER collapse to a near-month series.
         """
         df = load_sample(SAMPLE_DIR)
-        # Pick a date where we know GOLDM has multiple expiries
+
         date_mask = df["Date"] == pd.Timestamp("2025-01-02")
         goldm = df.loc[date_mask & (df["Symbol"] == "GOLDM")]
-        # Should have multiple rows — one per expiry
+
         assert len(goldm) >= 2, (
             "Expected multiple GOLDM rows (one per expiry), got "
             f"{len(goldm)}. Identity rule: key by (symbol, expiry_date)."
         )
-        # Each row should have a different ExpiryDate
+
         assert goldm["ExpiryDate"].nunique() == len(goldm)
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Sample data loading
-# ──────────────────────────────────────────────────────────────────────
 
 class TestSampleLoading:
     def test_loads_all_symbols(self):
@@ -198,21 +174,17 @@ class TestSampleLoading:
 
     def test_sorted_by_key(self):
         df = load_sample(SAMPLE_DIR)
-        # Should be sorted by Symbol, ExpiryDate, Date
+
         sorted_df = df.sort_values(["Symbol", "ExpiryDate", "Date"])
         pd.testing.assert_frame_equal(df.reset_index(drop=True),
                                        sorted_df.reset_index(drop=True))
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Quality report
-# ──────────────────────────────────────────────────────────────────────
-
 class TestQualityReport:
     def test_build_clean_from_sample(self, tmp_path):
         """Build a clean Parquet from sample CSVs and verify the report."""
         import shutil
-        # Copy sample files to tmp raw dir
+
         raw_dir = tmp_path / "raw"
         raw_dir.mkdir()
         for f in SAMPLE_DIR.glob("*.csv"):
@@ -225,14 +197,10 @@ class TestQualityReport:
         assert report["total_rows"] > 0
         assert out_path.exists()
 
-        # Reload and verify
+
         df = pd.read_parquet(out_path)
         assert len(df) == report["total_rows"]
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Zero-volume flagging
-# ──────────────────────────────────────────────────────────────────────
 
 class TestZeroVolume:
     def test_zero_volume_flagged(self, tmp_path):
@@ -248,10 +216,6 @@ class TestZeroVolume:
         assert df.iloc[0]["ZeroVolume"] == True
         assert df.iloc[1]["ZeroVolume"] == False
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Date mismatch error class and behavior
-# ──────────────────────────────────────────────────────────────────────
 
 class TestDateMismatch:
     def test_error_class_exists(self):
@@ -270,7 +234,7 @@ class TestDateMismatch:
             def raise_for_status(self):
                 pass
             def json(self):
-                # Request date was 2025-01-02, but response has 01/01/2025 (MM/DD/YYYY)
+
                 return [
                     {
                         "Symbol": "GOLDM",
@@ -293,10 +257,6 @@ class TestDateMismatch:
         assert "requested 2025-01-02, got 2025-01-01" in str(exc_info.value)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Data Source and Outlier Retention Tests
-# ──────────────────────────────────────────────────────────────────────
-
 class TestDataSourceAndOutliers:
     def test_load_data_source_label(self):
         from backend.data.parser import load_data
@@ -317,18 +277,14 @@ class TestDataSourceAndOutliers:
         csv_path.write_text(csv_content, encoding="utf-8")
 
         df, rejections = _clean_file(csv_path)
-        # All 4 rows retained
+
         assert len(df) == 4
-        # Outlier is flagged
+
         assert df["PriceOutlier"].sum() >= 1
-        # Rejection/flag log contains price_outlier_flagged
+
         reasons = [r["reason"] for r in rejections]
         assert "price_outlier_flagged" in reasons
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Step 1: Data Status & Quality Audit Suite
-# ──────────────────────────────────────────────────────────────────────
 
 class TestDataStatusAndQuality:
     def test_sample_data_status_is_demo(self):
@@ -337,7 +293,7 @@ class TestDataStatusAndQuality:
         status, last_date = get_data_status(df, "sample")
         assert status == "demo"
         assert last_date is not None
-        assert len(last_date) == 10  # YYYY-MM-DD
+        assert len(last_date) == 10
 
     def test_empty_dataframe_status_is_incomplete(self):
         from backend.data.parser import get_data_status
@@ -348,7 +304,7 @@ class TestDataStatusAndQuality:
 
     def test_missing_contracts_marked_incomplete(self):
         from backend.data.parser import get_data_status
-        # DataFrame with only GOLDM and missing other contracts
+
         mock_df = pd.DataFrame({
             "Symbol": ["GOLDM"],
             "Date": [pd.Timestamp("2026-06-01")],
@@ -360,7 +316,7 @@ class TestDataStatusAndQuality:
 
     def test_complete_mcx_marked_real(self):
         from backend.data.parser import get_data_status
-        # All required contracts present on same date
+
         mock_df = pd.DataFrame({
             "Symbol": ["GOLDM", "GOLDTEN", "GOLDGUINEA", "GOLDPETAL"],
             "Date": [pd.Timestamp("2026-06-01")] * 4,
@@ -373,7 +329,7 @@ class TestDataStatusAndQuality:
 
     def test_goldten_before_april_2025_not_required_for_completeness(self):
         from backend.data.parser import get_data_status
-        # In Jan 2025, GOLDTEN was not listed yet; GOLDM, GOLDGUINEA, GOLDPETAL suffice
+
         mock_df = pd.DataFrame({
             "Symbol": ["GOLDM", "GOLDGUINEA", "GOLDPETAL"],
             "Date": [pd.Timestamp("2025-01-15")] * 3,
@@ -386,7 +342,7 @@ class TestDataStatusAndQuality:
 
     def test_missing_trading_days_gap_marks_incomplete(self):
         from backend.data.parser import get_data_status
-        # 10 calendar days gap between sessions
+
         mock_df = pd.DataFrame({
             "Symbol": ["GOLDM", "GOLDTEN", "GOLDGUINEA", "GOLDPETAL"] * 2,
             "Date": [pd.Timestamp("2026-06-01")] * 4 + [pd.Timestamp("2026-06-11")] * 4,
@@ -407,7 +363,7 @@ class TestDataStatusAndQuality:
 
     def test_date_mismatch_rejection_in_clean_file(self, tmp_path):
         from backend.data.parser import _clean_file
-        # File named for 2025-01-05 but rows say 01/02/2025
+
         csv_content = textwrap.dedent("""\
             Symbol,Date,ExpiryDate,Open,High,Low,Close,Volume,OpenInterest
             GOLDM,01/02/2025,05FEB2025,58500,58750,58400,58650,12500,35000
@@ -416,7 +372,7 @@ class TestDataStatusAndQuality:
         csv_path.write_text(csv_content, encoding="utf-8")
 
         df, rejections = _clean_file(csv_path)
-        assert len(df) == 0  # mismatched row rejected
+        assert len(df) == 0
         reasons = [r["reason"] for r in rejections]
         assert "date_mismatch" in reasons
 

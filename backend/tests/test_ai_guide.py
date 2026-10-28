@@ -57,7 +57,7 @@ def test_ai_chat_cost_hurdle():
     assert resp.status_code == 200
     data = resp.json()
     assert "4-Leg" in data["reply"]
-    assert "10.0" in data["reply"]  # 4 * 2.5 bps = 10.0 bps
+    assert "10.0" in data["reply"]
 
 
 def test_ai_chat_calendar_tender_rule():
@@ -99,10 +99,10 @@ def test_ai_chat_speed_and_spread_inquiry():
     assert resp.status_code == 200
     data = resp.json()
     reply = data["reply"]
-    # Checks live numbers and concepts
+
     assert "Current Spread & Speed of Reversion" in reply
     assert "GOLDM" in reply and "GOLDTEN" in reply
-    assert "10.0 bps" in reply  # 4 * 2.5 hurdle
+    assert "10.0 bps" in reply
     assert "5.5 bps" in reply or "Costs would eat the gap" in reply
     assert "half-life" in reply.lower()
 
@@ -120,4 +120,34 @@ def test_ai_chat_hypothetical_and_creative_questions():
         data = resp.json()
         for phrase in expected_phrases:
             assert phrase.lower() in data["reply"].lower()
+
+
+def test_ai_chat_provider_parameter_and_fallback():
+
+    payload = {
+        "message": "Why is GOLDM 995 fineness while GOLDTEN is 999?",
+        "provider": "gemini",
+        "api_key": "test_dummy_key_12345",
+        "context": {"active_tab": "overview"}
+    }
+    resp = client.post("/api/chat", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "reply" in data
+    assert "995" in data["reply"]
+
+
+def test_ai_chat_grok_provider_fallback():
+
+    payload = {
+        "message": "Explain 4-leg transaction costs",
+        "provider": "grok",
+        "api_key": "test_grok_key_xyz",
+        "context": {"active_tab": "backtest", "cost_bps": 2.5}
+    }
+    resp = client.post("/api/chat", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "reply" in data
+    assert "4-Leg" in data["reply"] or "10.0" in data["reply"]
 

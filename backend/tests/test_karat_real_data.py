@@ -67,11 +67,11 @@ def test_window_selection_by_history_length():
 def test_no_lookahead_rolling():
     """Rolling reference strictly uses past days; future values do not affect past references."""
     series = pd.Series([10.0, 11.0, 12.0, 13.0, 14.0, 15.0])
-    # Shifted rolling mean ensures day t uses only data strictly prior to t
+
     rolling_ref = series.shift(1).rolling(window=3, min_periods=3).mean()
-    
-    assert pd.isna(rolling_ref.iloc[2])  # Not enough past days
-    assert rolling_ref.iloc[3] == (10.0 + 11.0 + 12.0) / 3.0  # Uses days 0, 1, 2
+
+    assert pd.isna(rolling_ref.iloc[2])
+    assert rolling_ref.iloc[3] == (10.0 + 11.0 + 12.0) / 3.0
     assert rolling_ref.iloc[4] == (11.0 + 12.0 + 13.0) / 3.0
 
 
@@ -94,11 +94,11 @@ def test_linear_interpolation_goldten_for_goldm():
     d_exp_m = dt.date(2026, 11, 5)
     d_exp_t1 = dt.date(2026, 10, 30)
     d_exp_t2 = dt.date(2026, 11, 30)
-    p_t1 = 14506.20  # Rs/g
-    p_t2 = 14644.50  # Rs/g
+    p_t1 = 14506.20
+    p_t2 = 14644.50
 
-    total_days = (d_exp_t2 - d_exp_t1).days  # 31 days
-    elapsed_days = (d_exp_m - d_exp_t1).days  # 6 days
+    total_days = (d_exp_t2 - d_exp_t1).days
+    elapsed_days = (d_exp_m - d_exp_t1).days
 
     interp_p = p_t1 + (p_t2 - p_t1) * (elapsed_days / total_days)
     assert 14506.20 < interp_p < 14644.50

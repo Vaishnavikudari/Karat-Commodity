@@ -43,7 +43,7 @@ class TestBuildUnseenSplitEnforcement:
         assert "build" in res
         assert "verdict" in res
 
-        # The headline verdict reflects the unseen period
+
         unseen_metrics = res["unseen"]["metrics"]
         assert "headline_conclusion" in res["verdict"]
         assert res["verdict"]["total_trades"] == unseen_metrics["total_trades"]
@@ -63,7 +63,7 @@ class TestCostMonotonicity:
             res = run_backtest(df, "GOLDM", "GOLDTEN", window=5, cost_per_leg_bps=c)
             net_pnls.append(res["unseen"]["metrics"]["net_pnl_bps"])
 
-        # Check monotonicity: each subsequent net P&L <= previous
+
         for i in range(len(net_pnls) - 1):
             assert net_pnls[i + 1] <= net_pnls[i] + 1e-6, (
                 f"Cost monotonicity violation! Cost {costs[i]} produced net P&L {net_pnls[i]}, "

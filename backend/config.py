@@ -12,19 +12,16 @@ Last verified: 2026-10-20
 from dataclasses import dataclass, field
 from typing import Dict
 
-# ──────────────────────────────────────────────────────────────────────
-# Contract specification
-# ──────────────────────────────────────────────────────────────────────
 
 @dataclass(frozen=True)
 class ContractSpec:
     """Immutable specification for one MCX gold product."""
     symbol: str
-    lot_size_g: float          # grams per lot
-    quote_base_g: float        # price is quoted per this many grams
-    purity: int                # fineness (995 or 999)
-    expiry_window: str         # human-readable expiry window description
-    listing_start: str | None  # YYYY-MM-DD; None means "available historically"
+    lot_size_g: float
+    quote_base_g: float
+    purity: int
+    expiry_window: str
+    listing_start: str | None
     notes: str = ""
 
 
@@ -44,7 +41,7 @@ CONTRACTS: Dict[str, ContractSpec] = {
         quote_base_g=10,
         purity=999,
         expiry_window="27th–31st of expiry month",
-        listing_start="2025-01-01",       # approximate; adjust if MCX differs
+        listing_start="2025-01-01",
         notes="",
     ),
     "GOLDGUINEA": ContractSpec(
@@ -65,40 +62,28 @@ CONTRACTS: Dict[str, ContractSpec] = {
     ),
 }
 
-# Symbols we track (order matters for display / default pairing)
+
 TRACKED_SYMBOLS = list(CONTRACTS.keys())
 
-# ──────────────────────────────────────────────────────────────────────
-# Cost model defaults (bps)
-# ──────────────────────────────────────────────────────────────────────
-DEFAULT_COST_PER_LEG_BPS = 0.5        # per leg, entry or exit
-THIN_LIQUIDITY_SLIPPAGE_MULT = 2.0    # extra multiplier when thin
-TOTAL_LEGS_PER_ROUND_TRIP = 4         # open leg A, open leg B, close A, close B
 
-# ──────────────────────────────────────────────────────────────────────
-# Liquidity thresholds
-# ──────────────────────────────────────────────────────────────────────
-VOLUME_THIN_THRESHOLD = 50            # fewer contracts → "thin"
-OI_THIN_THRESHOLD = 100               # OI below this also → "thin"
+DEFAULT_COST_PER_LEG_BPS = 0.5
+THIN_LIQUIDITY_SLIPPAGE_MULT = 2.0
+TOTAL_LEGS_PER_ROUND_TRIP = 4
 
-# ──────────────────────────────────────────────────────────────────────
-# Signal rule defaults
-# ──────────────────────────────────────────────────────────────────────
+
+VOLUME_THIN_THRESHOLD = 50
+OI_THIN_THRESHOLD = 100
+
+
 ENTRY_Z = 2.0
 EXIT_Z = 0.5
 TIME_STOP_DAYS = 10
-ZSCORE_WINDOW = 20                    # rolling lookback (trading days)
+ZSCORE_WINDOW = 20
 
-# ──────────────────────────────────────────────────────────────────────
-# Build / Unseen split
-# ──────────────────────────────────────────────────────────────────────
-# Percentage of the data used for the BUILD (in-sample) period.
-# The remainder is the UNSEEN (out-of-sample) period.
+
 BUILD_FRACTION = 0.6
 
-# ──────────────────────────────────────────────────────────────────────
-# Paths
-# ──────────────────────────────────────────────────────────────────────
+
 import pathlib
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -109,12 +94,10 @@ CLEAN_DIR = DATA_DIR / "clean"
 SAMPLE_DIR = DATA_DIR / "sample"
 PARQUET_PATH = CLEAN_DIR / "karat.parquet"
 
-# ──────────────────────────────────────────────────────────────────────
-# MCX Bhavcopy download
-# ──────────────────────────────────────────────────────────────────────
+
 MCX_BHAVCOPY_URL = (
     "https://www.mcxindia.com/backpage.aspx/GetDatewiseBhavCopy"
 )
-MCX_RATE_LIMIT_SECONDS = 1.5         # minimum gap between requests
+MCX_RATE_LIMIT_SECONDS = 1.5
 MCX_MAX_RETRIES = 3
-MCX_BACKOFF_BASE = 2.0               # exponential backoff base in seconds
+MCX_BACKOFF_BASE = 2.0

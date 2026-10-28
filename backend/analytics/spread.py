@@ -74,7 +74,7 @@ def compute_spread_series(
     """
     df = normalise_dataframe(df)
 
-    # Get common dates
+
     dates_a = set(df[df["Symbol"] == symbol_a]["Date"].unique())
     dates_b = set(df[df["Symbol"] == symbol_b]["Date"].unique())
     common_dates = sorted(dates_a & dates_b)
@@ -93,15 +93,15 @@ def compute_spread_series(
         norm_b = row_b["NormalisedPrice"]
         spread = norm_a - norm_b
 
-        # Exact formula: spread_bps(a, b) = (norm_a - norm_b) / norm_b * 10000
+
         spread_bps = ((norm_a - norm_b) / norm_b * 10000) if norm_b > 0 else 0.0
 
-        # Term structure carry adjustment (approximate mechanical roll-down)
+
         exp_a = row_a["ExpiryDate"].date() if hasattr(row_a["ExpiryDate"], "date") else row_a["ExpiryDate"]
         exp_b = row_b["ExpiryDate"].date() if hasattr(row_b["ExpiryDate"], "date") else row_b["ExpiryDate"]
         curr_d = d.date() if hasattr(d, "date") else d
         days_diff = (exp_a - exp_b).days
-        # Approx 6% annual MCX financing/carry curve
+
         carry_adj_bps = (600.0 * (days_diff / 365.0))
         carry_adjusted_spread_bps = spread_bps - carry_adj_bps
 
@@ -135,8 +135,7 @@ def compute_spread_series(
 
     result = pd.DataFrame(records)
 
-    # Rolling z-score using strictly PRIOR observations (zero contemporaneous/lookahead bias)
-    # Day t's z-score evaluates day t's spread against the mean and std of prior days strictly before t
+
     if len(result) >= window + 1:
         shifted_spread = result["spread_bps"].shift(1)
         rolling_mean = shifted_spread.rolling(window=window, min_periods=window).mean()
@@ -148,7 +147,7 @@ def compute_spread_series(
         )
         result["raw_z_score"] = np.nan_to_num(raw_z, nan=0.0).round(4)
 
-        # Carry-adjusted rolling Z-score (removes mechanical roll-down baseline drift)
+
         shifted_carry = result["carry_adjusted_spread_bps"].shift(1)
         rolling_carry_mean = shifted_carry.rolling(window=window, min_periods=window).mean()
         rolling_carry_std = shifted_carry.rolling(window=window, min_periods=window).std()

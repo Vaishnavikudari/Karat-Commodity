@@ -40,7 +40,7 @@ def get_contract_calendar(df: pd.DataFrame) -> dict[str, Any]:
         first_seen_date = first_seen.date() if hasattr(first_seen, "date") else first_seen
         last_seen_date = last_seen.date() if hasattr(last_seen, "date") else last_seen
 
-        # First liquid day: first date where volume >= VOLUME_THIN_THRESHOLD and OI >= OI_THIN_THRESHOLD
+
         liquid_days = group[
             (group["Volume"] >= VOLUME_THIN_THRESHOLD) & (group["OpenInterest"] >= OI_THIN_THRESHOLD)
         ]["Date"].sort_values()
@@ -51,10 +51,10 @@ def get_contract_calendar(df: pd.DataFrame) -> dict[str, Any]:
         else:
             first_liquid_date = first_seen_date
 
-        # MCX tender notice period begins 5 trading days (~7 calendar days) before expiry
+
         tender_start = exp_date - dt.timedelta(days=7)
         last_trading_day = exp_date
-        # Optimal roll window: 12 to 7 calendar days before expiry
+
         roll_window_start = exp_date - dt.timedelta(days=12)
         roll_window_end = exp_date - dt.timedelta(days=7)
 
@@ -123,22 +123,22 @@ def validate_trade_calendar(
     is_valid = True
     violations = []
 
-    # 1. Check listing bounds
+
     if listing_date and entry_date < listing_date:
         is_valid = False
         violations.append(f"Entry {entry_date} precedes listing start {listing_date} for {symbol}.")
 
-    # 2. Sequence check
+
     if exit_date < entry_date:
         is_valid = False
         violations.append(f"Exit {exit_date} is before entry {entry_date}.")
 
-    # 3. Tender period check
+
     if entry_date >= tender_start:
         is_valid = False
         violations.append(f"Entry {entry_date} falls inside tender delivery period starting {tender_start}.")
 
-    # 4. Expiry / Last trade day check
+
     if exit_date > last_trading_day:
         is_valid = False
         violations.append(f"Exit {exit_date} is after contract last trade date {last_trading_day}.")

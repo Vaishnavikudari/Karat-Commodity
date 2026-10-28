@@ -6,7 +6,7 @@ Rebuilds karat_clean.csv and quality_report.json from all valid Bhavcopy CSV fil
 import sys
 from pathlib import Path
 
-# Ensure project root is in sys.path
+
 root = Path(__file__).resolve().parent
 if str(root) not in sys.path:
     sys.path.insert(0, str(root))

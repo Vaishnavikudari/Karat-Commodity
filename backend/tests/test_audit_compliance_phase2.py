@@ -38,23 +38,19 @@ def clean_data():
     return df
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 1. CONTRACT LIFECYCLE: TENDER LIQUIDATION & STAGGERED EXPIRY
-# ──────────────────────────────────────────────────────────────────────
-
 def test_tender_period_mandatory_exit_in_simulation():
     """
     MCX Rule: Non-delivery market participants must not carry positions into
     the compulsory delivery tender window (starts 7 calendar days before expiry).
     An active backtest position MUST forcibly exit on or before the tender start date.
     """
-    # Build a 25-day synthetic series approaching expiry on day 25
+
     base_date = dt.date(2026, 10, 1)
     expiry = dt.date(2026, 10, 25)
-    tender_start = expiry - dt.timedelta(days=7)  # 2026-10-18
+    tender_start = expiry - dt.timedelta(days=7)
 
     dates = [base_date + dt.timedelta(days=i) for i in range(25)]
-    # Z-scores: Trigger entry at day 2 (|z| = 2.5), but stays high until day 24 (never reverts statistically)
+
     z_scores = [0.0, 0.5, 2.5] + [2.2] * 22
     spreads = [10.0] * 25
     raw_a = [14500.0] * 25
@@ -75,7 +71,7 @@ def test_tender_period_mandatory_exit_in_simulation():
 
     spread_df = pd.DataFrame(records)
 
-    # Run strategy with very large time_stop (50 days) so only tender forces the exit
+
     trades = _run_strategy(
         spread_df=spread_df,
         entry_z=2.0,
@@ -90,7 +86,7 @@ def test_tender_period_mandatory_exit_in_simulation():
     assert t["exit_reason"] == "tender_period_liquidation", (
         f"Exit reason must be tender_period_liquidation, got: {t['exit_reason']}"
     )
-    # Exit date must be on or after tender_start (2026-10-18)
+
     exit_date = dt.date.fromisoformat(str(t["exit_date"])[:10])
     assert exit_date >= tender_start, f"Exit date {exit_date} must be at or after tender start {tender_start}"
     assert exit_date < expiry, f"Exit date {exit_date} must be strictly before contract expiry {expiry}"
@@ -102,9 +98,9 @@ def test_staggered_expiry_prevents_unhedged_leg():
     the strategy must exit when Leg A enters tender or expires so that Leg B is never held unhedged.
     """
     base_date = dt.date(2026, 10, 1)
-    exp_a = dt.date(2026, 10, 15)  # Near expiry
-    exp_b = dt.date(2026, 11, 15)  # Far expiry
-    tender_a = exp_a - dt.timedelta(days=7)  # 2026-10-08
+    exp_a = dt.date(2026, 10, 15)
+    exp_b = dt.date(2026, 11, 15)
+    tender_a = exp_a - dt.timedelta(days=7)
 
     dates = [base_date + dt.timedelta(days=i) for i in range(20)]
     records = []
@@ -132,7 +128,7 @@ def test_staggered_expiry_prevents_unhedged_leg():
 
     assert len(trades) == 1
     t = trades[0]
-    # Trade must exit due to Leg A's earlier tender start date
+
     assert t["exit_reason"] in ("tender_period_liquidation", "staggered_expiry_unwind")
     exit_d = dt.date.fromisoformat(str(t["exit_date"])[:10])
     assert exit_d <= exp_a, f"Must exit before or on earlier contract expiry {exp_a}"
@@ -144,13 +140,13 @@ def test_no_entry_inside_tender_window_or_near_expiry():
     the tender window or within 3 days of expiration.
     """
     expiry = dt.date(2026, 10, 10)
-    # Simulation dates 2026-10-05 to 2026-10-09 (inside tender window: 2026-10-03 to 10-10)
+
     dates = [dt.date(2026, 10, 5) + dt.timedelta(days=i) for i in range(4)]
     records = []
     for d in dates:
         records.append({
             "date": d,
-            "z_score": 3.0,  # Huge dislocation
+            "z_score": 3.0,
             "spread_bps": 50.0,
             "raw_a": 14500.0,
             "raw_b": 14450.0,
@@ -163,10 +159,6 @@ def test_no_entry_inside_tender_window_or_near_expiry():
     assert len(trades) == 0, "No trade should enter inside the tender delivery window"
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 2. TERM STRUCTURE & CARRY-ADJUSTED Z-SCORES
-# ──────────────────────────────────────────────────────────────────────
-
 def test_carry_adjusted_spread_and_zscore_zero_lookahead(clean_data):
     """
     Verify carry-adjusted spread deduction and confirm zero lookahead on carry Z-score.
@@ -176,7 +168,7 @@ def test_carry_adjusted_spread_and_zscore_zero_lookahead(clean_data):
     assert "carry_adjusted_spread_bps" in res.columns
     assert "carry_adjusted_z_score" in res.columns
 
-    # Verify that carry adjusted spread removes financing roll-down
+
     for _, row in res.iterrows():
         exp_a = dt.date.fromisoformat(str(row["expiry_a"])[:10])
         exp_b = dt.date.fromisoformat(str(row["expiry_b"])[:10])
@@ -184,8 +176,7 @@ def test_carry_adjusted_spread_and_zscore_zero_lookahead(clean_data):
         expected_adj = 600.0 * (days_diff / 365.0)
         assert row["carry_adjusted_spread_bps"] == pytest.approx(row["spread_bps"] - expected_adj, abs=0.05)
 
-    # Verify zero lookahead on carry Z-score:
-    # Mutating day t's carry spread must NOT affect day t's rolling carry mean/std
+
     shifted_carry = res["carry_adjusted_spread_bps"].shift(1)
     rolling_carry_mean = shifted_carry.rolling(window=window, min_periods=window).mean()
     rolling_carry_std = shifted_carry.rolling(window=window, min_periods=window).std()
@@ -194,7 +185,7 @@ def test_carry_adjusted_spread_and_zscore_zero_lookahead(clean_data):
         expected_z = (res.loc[idx, "carry_adjusted_spread_bps"] - rolling_carry_mean.iloc[idx]) / rolling_carry_std.iloc[idx]
         assert res.loc[idx, "carry_adjusted_z_score"] == pytest.approx(round(expected_z, 4), abs=0.001)
 
-    # Verify use_carry_adj parameter toggles z_score column
+
     res_carry = compute_spread_series(clean_data, "GOLDM", "GOLDTEN", window=window, use_carry_adj=True)
     assert np.allclose(res_carry["z_score"], res["carry_adjusted_z_score"])
 
@@ -216,8 +207,7 @@ def test_historical_curve_regimes_tracking(clean_data):
         assert "annualized_carry_pct" in r
         assert r["regime"] in ("Contango", "Backwardation", "Flat / Parity")
 
-        # Mathematical consistency:
-        # annualized_carry_pct = ((far - near) / near) * (365 / cal_days) * 100
+
         near_p = r["near_norm_price"]
         far_p = r["far_norm_price"]
         cal_days = r["calendar_days"]
@@ -236,10 +226,6 @@ def test_api_curve_regimes_endpoint(client):
     assert "data_status" in data
 
 
-# ──────────────────────────────────────────────────────────────────────
-# 3. MARKET ATTRIBUTION & EXPOSURE LABELING
-# ──────────────────────────────────────────────────────────────────────
-
 def test_market_attribution_exposure_indicators_and_caveats(clean_data):
     """
     Correlation must be labeled as an indicator of directional market exposure,
@@ -254,7 +240,7 @@ def test_market_attribution_exposure_indicators_and_caveats(clean_data):
     assert "market_exposure_assessment" in attribution
     assert "exposure_caveat" in attribution
 
-    # Check analytical caveat text
+
     caveat = attribution["exposure_caveat"]
     assert "empirical indicator" in caveat.lower() or "indicator of market exposure" in caveat.lower()
     assert "not definitive proof" in caveat.lower() or "not proof" in caveat.lower()

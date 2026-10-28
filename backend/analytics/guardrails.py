@@ -32,7 +32,7 @@ def extract_numbers_from_text(text: str) -> list[float]:
         return []
 
     cleaned = text.replace(",", "")
-    # Match numbers: e.g. -14.5, 100, 2.50%, +14.87, ₹14506.20
+
     pattern = r"[-+]?\d*\.?\d+"
     matches = re.findall(pattern, cleaned)
 
@@ -62,7 +62,7 @@ def extract_allowed_numbers_from_payload(payload: Any) -> set[float]:
     def _collect(val: Any):
         if isinstance(val, (int, float)) and not isinstance(val, bool):
             allowed.add(round(float(val), 4))
-            # Also add common rounded integer representation if applicable
+
             allowed.add(float(round(val)))
             allowed.add(float(int(val)))
         elif isinstance(val, str):
@@ -102,13 +102,13 @@ def validate_ai_output(
     unsupported: list[float] = []
 
     for num in found_numbers:
-        # Check if number matches any allowed number within tolerance
+
         matched = False
         for allowed in allowed_numbers:
             if abs(num - allowed) <= tolerance:
                 matched = True
                 break
-            # Also allow percentage to decimal (e.g. 0.05 vs 5%)
+
             if abs(num * 100.0 - allowed) <= tolerance or abs(num / 100.0 - allowed) <= tolerance:
                 matched = True
                 break

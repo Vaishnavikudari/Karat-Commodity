@@ -1,1 +1,1 @@
-# KARAT – FastAPI application
+

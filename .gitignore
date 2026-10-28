@@ -26,3 +26,8 @@ cloudflared.exe
 .idea/
 .DS_Store
 Thumbs.db
+
+# Presentation and raw PDF circulars
+*.pptx
+*.pdf
+bhavcopy datasets/

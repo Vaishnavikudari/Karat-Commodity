@@ -42,8 +42,7 @@ class TestContractLifecycleCalendar:
             assert "roll_window_end" in ev
             assert "status" in ev
 
-            # Structural date sequence check:
-            # first_trading_day <= tender_start <= last_trading_day
+
             ftd = dt.date.fromisoformat(ev["first_trading_day"])
             ts = dt.date.fromisoformat(ev["tender_start"])
             ltd = dt.date.fromisoformat(ev["last_trading_day"])
@@ -67,7 +66,7 @@ class TestTradeCalendarValidation:
 
     def test_trade_rejected_if_entry_in_tender_period(self):
         """Entering inside the compulsory delivery tender notice window must be flagged/invalid."""
-        # For Feb 5 expiry, tender starts ~Jan 29
+
         res = validate_trade_calendar(
             symbol="GOLDM",
             expiry_date=dt.date(2025, 2, 5),

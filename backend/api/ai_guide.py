@@ -38,6 +38,8 @@ class ChatRequest(BaseModel):
     message: str
     context: Optional[ChatContext] = None
     history: Optional[List[ChatMessage]] = None
+    provider: Optional[str] = Field("auto", description="'gemini' | 'grok' | 'groq' | 'openai' | 'auto'")
+    api_key: Optional[str] = Field(None, description="Optional user-provided Gemini or Grok API key")
 
 
 class ChatResponse(BaseModel):
@@ -47,7 +49,6 @@ class ChatResponse(BaseModel):
     suggested_questions: List[str]
 
 
-# Contextual suggested prompt chips per page
 SUGGESTED_QUESTIONS: Dict[str, List[str]] = {
     "overview": [
         "What is the meaning and purpose of KARAT?",
@@ -67,6 +68,12 @@ SUGGESTED_QUESTIONS: Dict[str, List[str]] = {
         "What is the thin-liquidity slippage penalty?",
         "Can any strategy survive costs on this pair?"
     ],
+    "visualizer": [
+        "How does the animated phase-space orbit demonstrate mean-reversion?",
+        "What triggers the 4-Gate Opportunity Radar in real-time?",
+        "Why do particle trajectories oscillate around the zero line?",
+        "How does zero-lookahead bias prevention work during playback?"
+    ],
     "calendar": [
         "What is the MCX 5-day tender period rule?",
         "Why do we force-roll positions before tender starts?",
@@ -83,31 +90,45 @@ SUGGESTED_QUESTIONS: Dict[str, List[str]] = {
 
 
 def build_system_prompt(ctx: ChatContext) -> str:
-    """Builds a rich context prompt for LLM completions."""
+    """Builds a comprehensive prototype intelligence prompt for Gemini/Grok completions."""
     tab_name = ctx.active_tab.capitalize()
-    provenance = "MCX BHAVCOPY DATA"
+    provenance = "MCX Official Bhavcopy Dataset (59 Trading Sessions: 2026-08-03 to 2026-10-23)"
 
-    prompt = f"""You are the **KARAT AI Guide**, an elite quantitative commodity derivatives intelligence assistant embedded in the KARAT terminal.
-You specialize in Indian commodity markets, specifically MCX Gold Futures (GOLDM, GOLDTEN, GOLDGUINEA, GOLDPETAL).
+    prompt = f"""You are the **KARAT AI Guide**, an institutional-grade quantitative commodity derivatives intelligence assistant embedded in the KARAT terminal.
+You have complete, authoritative understanding of the KARAT prototype engineered for Multi Commodity Exchange of India (MCX) Gold Futures.
 
-CURRENT TERMINAL CONTEXT:
-- Active Page: {tab_name}
-- Data Provenance: {provenance} (As of {ctx.as_of_date or 'latest'})
-- Benchmark Contract: {ctx.reference_symbol} (10g, 999 fineness)
-- Selected Pair: {ctx.selected_pair or 'GOLDM_GOLDTEN'}
-- Round-trip Cost per leg: {ctx.cost_bps or 2.5} bps (4 legs total = {(ctx.cost_bps or 2.5)*4:.1f} bps round-trip hurdle)
+PROTOTYPE CORE ARCHITECTURE & THE 6 INTEGRATED MODULES:
+1. Overview: Unified normalisation table standardising heterogeneous purities to ₹/g of 999 fineness. Features the Contract Chooser & Position Matcher which dynamically calculates minimum cash drag allocations for target gold gram portfolios (10g, 100g, 1,000g).
+2. Spread Lab: Pairwise basis spreads, zero-lookahead 20-day rolling Z-score statistical ribbons, multi-expiry term structure curves, and annualized carry cost metrics.
+3. Walk-Forward Backtest Engine: Simulates statistical mean-reversion pairs trading with strict 60% In-Sample (Build) vs 40% Out-of-Sample (Unseen) holdout periods. Evaluates entries at |z| >= 2.0σ and exits at reversion to 0.0σ or 15-day time stop.
+4. Market Replay Studio (Visualizer): 60-FPS continuous canvas accelerator displaying particle waveforms, interactive timeline scrubbing across 59 MCX trading sessions, dynamic Phase-Space Mean-Reversion Orbit diagrams (Spread_t vs dSpread/dt) around equilibrium attractor (0,0), and real-time 4-Gate Opportunity Radar HUD.
+5. Contract Lifecycle Calendar: Official MCX contract specifications, active roll windows, and strict 5-day physical delivery tender window guards.
+6. Data Quality Audit & Methodology: MCX Bhavcopy validation pipeline with downloadable audit files (Clean Bhavcopy CSV, Normalised Prices CSV, Spreads CSV, Trades CSV, Quality Report JSON).
 
-CORE RULES & MANDATES:
-1. Explain complex quantitative derivative concepts in clear, direct, accessible English.
-2. If asked about the meaning, purpose, or platform, explain clearly:
-   - 'Karat' represents gold purity (24 karat = 999 fineness).
-   - The platform unifies the 4 MCX gold contracts on one standard scale (₹/g of 999 pure gold) to identify true relative-value mispricings.
-3. ALWAYS use the actual application mathematical formulas:
-   - Price Normalisation: P_norm = (P_raw / Quote_Base) * (999 / Purity)
-   - Spread (bps) = ((P_norm_A - P_norm_B) / P_norm_ref) * 10,000
-   - Round-trip Friction = 4 legs * cost_per_leg (2 legs entry: Buy A + Sell B, 2 legs exit: Sell A + Buy B)
-4. Never hallucinate financial returns or promise guaranteed arbitrage.
-5. Format responses with clean markdown (headers, bullet points, and bold text).
+THE 4 MCX GOLD CONTRACT SPECIFICATIONS:
+- GOLDM (Mini): 100g trading unit, 995 fineness, quoted in ₹/10g. Normalisation formula: P_norm = (P_raw / 10) * (999 / 995) ≈ P_raw * 0.100402.
+- GOLDTEN: 10g trading unit, 999 fineness, quoted in ₹/10g. Normalisation formula: P_norm = P_raw / 10. Official reference benchmark.
+- GOLDGUINEA: 8g trading unit, 999 fineness, quoted in ₹/8g. Normalisation formula: P_norm = P_raw / 8. Carries a ~50-65 bps structural physical minting & retail handling premium (not an arbitrage opportunity).
+- GOLDPETAL: 1g trading unit, 999 fineness, quoted in ₹/1g. Normalisation formula: P_norm = P_raw / 1. Carries a retail bullion premium.
+
+4-LEG EXECUTION FRICTION MODEL & HURDLE:
+- Entering a pair requires 2 legs (Buy Leg A + Sell Leg B).
+- Exiting a pair requires 2 legs (Sell Leg A + Buy Leg B).
+- Total round-trip = 4 legs.
+- Baseline friction is {ctx.cost_bps or 2.5} bps per leg -> Total Round-Trip Hurdle = {(ctx.cost_bps or 2.5)*4:.1f} bps.
+- Any basis spread narrower than {(ctx.cost_bps or 2.5)*4:.1f} bps is guaranteed negative alpha because execution frictions consume the gross margin.
+
+CURRENT TERMINAL RUNTIME CONTEXT:
+- Active Screen / Page: {tab_name}
+- Benchmark Reference: {ctx.reference_symbol} (10g, 999 fineness)
+- Selected Contract Pair: {ctx.selected_pair or 'GOLDM_GOLDTEN'}
+- Active Friction Hurdle: {(ctx.cost_bps or 2.5)*4:.1f} bps (at {ctx.cost_bps or 2.5} bps/leg)
+- Data Status: {provenance}
+
+YOUR INSTRUCTIONS:
+- You are free to answer ANY question the user asks about the prototype, financial mechanics, normalisation math, gold markets, trading strategies, or hypothetical economic scenarios.
+- Analyze the user's question with full quantitative depth and explain clearly in simple, engaging English.
+- Use clean Markdown with headers, bullet points, and bold terms for readability.
 """
     return prompt
 
@@ -132,9 +153,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
     cost_leg = ctx.cost_bps if ctx.cost_bps is not None else 2.5
     round_trip_hurdle = cost_leg * 4.0
 
-    # =========================================================================
-    # 0. LIVE SPREAD & SPEED OF REVERSION (Explicit user query)
-    # =========================================================================
+
     is_spread_or_speed_query = any(k in msg for k in [
         "current speed", "current spread", "what does the current", "what does the spread",
         "tell you about", "tells u about", "speed tells", "spread tells", "opportunity right now",
@@ -163,9 +182,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "• GOLDGUINEA (+63.6 bps) and GOLDPETAL (+58.5 bps) sit steadily above GOLDTEN. This is a **structural physical coin minting and retail handling premium**, not a temporary mispricing."
         )
 
-    # =========================================================================
-    # 1. QUANTUM COMPUTING, ALGORITHMS & HIGH-FREQUENCY TRADING
-    # =========================================================================
+
     if any(k in msg for k in ["quantum", "quantum computing", "algorithm", "algo", "hft", "high frequency", "machine learning", "ai trading"]):
         return (
             "### ⚡ Technology & Arbitrage: Quantum Computing & Algorithmic Execution\n\n"
@@ -181,9 +198,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "   - On exchanges like MCX, edge is captured via tick-to-trade latency (FPGA NICs, co-location in the exchange data center) rather than raw algorithmic complexity."
         )
 
-    # =========================================================================
-    # 2. HYPOTHETICAL, SCENARIO & 'MADE-UP' QUESTIONS
-    # =========================================================================
+
     is_hypothetical = any(k in msg for k in [
         "what if", "suppose", "imagine", "asteroid", "alien", "200000", "200,000",
         "drop to zero", "drops to zero", "collapse", "fake", "made up", "scenario",
@@ -192,7 +207,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
     ])
 
     if is_hypothetical:
-        # Scenario: Humorous / Absurd questions (e.g. dogs / animals taking over)
+
         if any(has_term(msg, w) for w in ["dog", "dogs", "cat", "cats", "pet", "pets", "alien", "aliens", "zombie"]):
             return (
                 f"### 🐾 Hypothetical Scenario Analysis: \"{message}\"\n\n"
@@ -206,7 +221,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
                 f"3. **In KARAT:** The normalisation scale (`₹/g of 999 gold`) and 4-leg cost barrier ({round_trip_hurdle:.1f} bps) are completely actor-agnostic—they protect capital against irrational order flow no matter who or what is sending the orders."
             )
 
-        # Scenario A: Asteroid of gold / Extreme supply shock
+
         if any(w in msg for w in ["asteroid", "meteor", "space", "psyche", "mining the moon", "infinite gold"]):
             return (
                 "### 🌌 Hypothetical Scenario: An Asteroid of Pure Gold Lands on Earth\n\n"
@@ -219,7 +234,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
                 "   - Exchange margin requirements would spike to 100% to handle catastrophic volatility."
             )
 
-        # Scenario B: Gold reaches ₹2,00,000 / 10g
+
         if any(w in msg for w in ["200000", "200,000", "double", "skyrocket", "hyperinflation", "massive rally"]):
             return (
                 "### 🚀 Hypothetical Scenario: MCX Gold Rallies to ₹2,00,000 / 10g\n\n"
@@ -236,7 +251,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
                 "   - Absolute rupee spreads would double, but basis point (bps) spreads would remain governed by cost hurdles."
             )
 
-        # Scenario C: Gold drops to zero
+
         if any(w in msg for w in ["zero", "drop to zero", "worthless"]):
             return (
                 "### 📉 Hypothetical Scenario: Can Gold Drop to Zero?\n\n"
@@ -246,7 +261,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
                 "3. **Sovereign Central Bank Reserves:** Central banks hold over 36,000 metric tons of gold as Tier-1 risk-free reserve assets. They act as permanent buyers of last resort during extreme selloffs."
             )
 
-        # Scenario D: MCX introduces a new contract size (e.g., 50g)
+
         if any(w in msg for w in ["new contract", "50g", "50 gram", "another contract"]):
             return (
                 "### 💡 Hypothetical Scenario: MCX Launches a 50g Gold Contract\n\n"
@@ -257,7 +272,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
                 "3. **Liquidity Impact:** It would likely draw volume away from GOLDM, creating temporary basis mispricings during its initial listing months."
             )
 
-        # Generic hypothetical response
+
         return (
             f"### 🔮 Hypothetical Thought Experiment\n\n"
             f"Analyzing your scenario: *\"{message}\"*\n\n"
@@ -267,9 +282,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             f"3. **Application in KARAT:** Regardless of how wild market conditions become, KARAT's normalisation scale and 4-leg transaction cost hurdle ({round_trip_hurdle:.1f} bps) ensure traders distinguish genuine market anomalies from execution traps."
         )
 
-    # =========================================================================
-    # 3. GENERAL MACROECONOMICS, GOLD FUNDAMENTALS & FINANCE
-    # =========================================================================
+
     if any(has_term(msg, w) for w in ["inflation", "purchasing power", "safe haven"]):
         return (
             "### 🛡️ Gold as an Inflation Hedge & Store of Value\n\n"
@@ -311,10 +324,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "3. **Gold ETFs:** Fully backed fractional units (1 unit ≈ 0.01g–1g) traded on stock exchanges with daily liquidity and minimal tracking error."
         )
 
-    # =========================================================================
-    # 3. CORE PLATFORM ARCHITECTURE, FORMULAS & CONTRACT TERMS
-    # =========================================================================
-    # Normalisation / Purity / 995 vs 999
+
     if any(k in msg for k in ["995", "purity", "fineness", "normalise", "normalize", "formula", "per gram", "calculate"]):
         return (
             "### ⚖️ The Normalisation & Purity Formula\n\n"
@@ -329,7 +339,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "This mathematically eliminates the ~40 basis point purity discount, revealing the true relative-value spread."
         )
 
-    # Meaning / Purpose of Prototype / What is KARAT
+
     if any(k in msg for k in ["meaning", "purpose", "what is karat", "what does karat mean", "about karat", "about the prototype", "what is this", "prototype", "concept", "what does it do", "who is this for", "define"]):
         return (
             "### 🏆 Meaning & Purpose of KARAT\n\n"
@@ -346,7 +356,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "**KARAT mathematically normalises every contract to ₹ per 1 gram of 999 fine gold**, calculates rolling 20-day statistical basis spreads (Z-scores), and enforces a realistic **4-leg transaction cost hurdle** (10 bps round-trip) so traders never trade phantom paper profits."
         )
 
-    # Specific Contracts
+
     if any(k in msg for k in ["goldm", "goldten", "goldguinea", "goldpetal", "contracts"]):
         return (
             "### 📦 The 4 MCX Gold Futures Contracts\n\n"
@@ -356,7 +366,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "4. **GOLDPETAL:** 1g micro-bullion contract, quoted per 1g at **999 fineness**. Micro retail volume (~50–250 lots/day). Regularly triggers thin-liquidity alerts in far expiries."
         )
 
-    # Z-Score / Statistical Arbitrage
+
     if any(k in msg for k in ["z-score", "z score", "arbitrage", "mean reversion", "sigma", "threshold"]):
         return (
             f"### 📈 20-Day Rolling Z-Score & Mean Reversion ({pair})\n\n"
@@ -369,7 +379,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "**Crucial Quantitative Rule:** The rolling mean and standard deviation are computed **strictly backwards-looking (zero lookahead bias)** so historical tests never leak future data."
         )
 
-    # 4-Leg Transaction Cost Model / Slippage
+
     if any(k in msg for k in ["cost", "4-leg", "leg", "friction", "bps", "slippage", "brokerage", "fee", "survive"]):
         return (
             f"### 💸 The 4-Leg Execution Friction Model\n\n"
@@ -383,7 +393,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "**The Institutional Rule:** Any theoretical spread gap smaller than this hurdle is **guaranteed negative alpha**. In KARAT, we treat *'No persistent edge survives costs'* as a valid and honest outcome."
         )
 
-    # Backtest / Split-Sample Validation / Unseen vs Build
+
     if any(k in msg for k in ["backtest", "split-sample", "unseen", "build", "in-sample", "out-of-sample", "overfit"]):
         return (
             "### 🔬 Split-Sample Walk-Forward Backtesting\n\n"
@@ -396,7 +406,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "3. **Tender Liquidation:** Positions are automatically unwound before the MCX 5-day delivery tender window."
         )
 
-    # Calendar / Tender Rules / Physical Delivery
+
     if any(k in msg for k in ["calendar", "tender", "delivery", "roll", "physical", "expiry", "holiday"]):
         return (
             "### 📅 MCX Contract Lifecycle & The 5-Day Tender Rule\n\n"
@@ -406,7 +416,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "• **Expiry Timing:** GOLDM contracts typically expire between the 3rd and 5th of the month, whereas GOLDTEN, GOLDGUINEA, and GOLDPETAL expire on the final trading session of the contract month."
         )
 
-    # Data Quality / Bhavcopy / Zero Volume
+
     if any(k in msg for k in ["quality", "bhavcopy", "audit", "clean", "outlier", "zero volume", "mismatch"]):
         return (
             "### 🛡️ Data Quality & Bhavcopy Audit Pipeline\n\n"
@@ -417,7 +427,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "4. **Provenance Tracking:** Distinguishes verified MCX exchange downloads from synthetic demo samples."
         )
 
-    # Page-Specific Contextual Overviews
+
     if any(k in msg for k in ["explain this page", "what am i looking at", "what is this", "help", "guide", "overview", "current page"]):
         if tab == "overview":
             return (
@@ -463,7 +473,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
                 "3. **Worked Mathematical Formulas:** Step-by-step proofs for normalisation, basis spread calculation, and friction deduction."
             )
 
-    # Conversational / Greetings
+
     if any(k in msg for k in ["hello", "hi", "hey", "who are you", "what can you do"]):
         return (
             "### 👋 Hello! I am the KARAT AI Guide\n\n"
@@ -475,7 +485,7 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
             "What would you like to explore?"
         )
 
-    # Open-domain intelligent response for any other question
+
     return (
         f"### 💡 Question Analysis: {message}\n\n"
         "Here is a quantitative breakdown addressing your question:\n\n"
@@ -486,10 +496,82 @@ def generate_domain_explanation(message: str, ctx: ChatContext) -> str:
     )
 
 
+async def call_gemini(api_key: str, system_prompt: str, user_msg: str, history: Optional[List[ChatMessage]] = None) -> Optional[str]:
+    """Calls Google Gemini API directly using httpx REST (supports gemini-1.5-flash, gemini-2.0-flash, gemini-1.5-pro)."""
+    models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    for model_name in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+        contents = []
+        if history:
+            for h in history[-4:]:
+                contents.append({
+                    "role": "user" if h.role == "user" else "model",
+                    "parts": [{"text": h.content}]
+                })
+        contents.append({
+            "role": "user",
+            "parts": [{"text": f"{system_prompt}\n\nUser Question: {user_msg}"}]
+        })
+        body = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": 1000
+            }
+        }
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                res = await client.post(url, json=body)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"].strip()
+        except Exception:
+            continue
+    return None
+
+
+async def call_grok(api_key: str, system_prompt: str, user_msg: str, history: Optional[List[ChatMessage]] = None) -> Optional[str]:
+    """Calls xAI Grok API directly using httpx REST."""
+    url = "https://api.x.ai/v1/chat/completions"
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        for h in history[-4:]:
+            messages.append({"role": h.role, "content": h.content})
+    messages.append({"role": "user", "content": user_msg})
+
+    models = ["grok-2-latest", "grok-beta"]
+    for model_name in models:
+        body = {
+            "model": model_name,
+            "messages": messages,
+            "temperature": 0.3,
+            "max_tokens": 1000
+        }
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                res = await client.post(
+                    url,
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json=body
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    choices = data.get("choices", [])
+                    if choices and "message" in choices[0]:
+                        return choices[0]["message"]["content"].strip()
+        except Exception:
+            continue
+    return None
+
+
 async def ask_ai_guide(req: ChatRequest) -> ChatResponse:
     """
     Main controller for KARAT AI Guide.
-    Tries configured LLM APIs (Grok, Groq free tier, Gemini, OpenAI) with automatic fallback
+    Tries configured LLM APIs (Google Gemini, Grok/xAI, Groq free tier, OpenAI) with automatic fallback
     to the domain quantitative intelligence engine.
     """
     ctx = req.context or ChatContext()
@@ -497,39 +579,36 @@ async def ask_ai_guide(req: ChatRequest) -> ChatResponse:
     suggested = SUGGESTED_QUESTIONS.get(tab, SUGGESTED_QUESTIONS["overview"])
     system_prompt = build_system_prompt(ctx)
 
-    # 1. Check for Grok (xAI API)
-    grok_key = os.environ.get("GROK_API_KEY") or os.environ.get("XAI_API_KEY")
-    if grok_key:
-        try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                res = await client.post(
-                    "https://api.x.ai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {grok_key}"},
-                    json={
-                        "model": "grok-beta",
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": req.message}
-                        ],
-                        "temperature": 0.3,
-                        "max_tokens": 600
-                    }
-                )
-                if res.status_code == 200:
-                    data = res.json()
-                    reply_text = data["choices"][0]["message"]["content"]
-                    return ChatResponse(
-                        reply=reply_text.strip(),
-                        mode="llm_grok",
-                        context_tab=tab,
-                        suggested_questions=suggested
-                    )
-        except Exception:
-            pass
+    user_key = (req.api_key or "").strip()
+    provider = (req.provider or "auto").lower()
 
-    # 2. Check for Groq free-tier API
-    groq_key = os.environ.get("GROQ_API_KEY")
-    if groq_key:
+
+    gemini_key = user_key if (provider == "gemini" and user_key) else os.environ.get("GEMINI_API_KEY")
+    if (provider in ["gemini", "auto"]) and gemini_key:
+        reply_gemini = await call_gemini(gemini_key, system_prompt, req.message, req.history)
+        if reply_gemini:
+            return ChatResponse(
+                reply=reply_gemini,
+                mode="llm_gemini",
+                context_tab=tab,
+                suggested_questions=suggested
+            )
+
+
+    grok_key = user_key if (provider == "grok" and user_key) else (os.environ.get("GROK_API_KEY") or os.environ.get("XAI_API_KEY"))
+    if (provider in ["grok", "auto"]) and grok_key:
+        reply_grok = await call_grok(grok_key, system_prompt, req.message, req.history)
+        if reply_grok:
+            return ChatResponse(
+                reply=reply_grok,
+                mode="llm_grok",
+                context_tab=tab,
+                suggested_questions=suggested
+            )
+
+
+    groq_key = user_key if (provider == "groq" and user_key) else os.environ.get("GROQ_API_KEY")
+    if (provider in ["groq", "auto"]) and groq_key:
         try:
             async with httpx.AsyncClient(timeout=8.0) as client:
                 res = await client.post(
@@ -557,54 +636,39 @@ async def ask_ai_guide(req: ChatRequest) -> ChatResponse:
         except Exception:
             pass
 
-    # 3. Check for Google Gemini
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if gemini_key:
+
+    openai_key = user_key if (provider == "openai" and user_key) else os.environ.get("OPENAI_API_KEY")
+    if (provider in ["openai", "auto"]) and openai_key:
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            full_prompt = f"{system_prompt}\n\nUser Question: {req.message}"
-            res = model.generate_content(full_prompt)
-            if res and res.text:
-                return ChatResponse(
-                    reply=res.text.strip(),
-                    mode="llm_gemini",
-                    context_tab=tab,
-                    suggested_questions=suggested
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                messages = [{"role": "system", "content": system_prompt}]
+                if req.history:
+                    for h in req.history[-4:]:
+                        messages.append({"role": h.role, "content": h.content})
+                messages.append({"role": "user", "content": req.message})
+                res = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {openai_key}"},
+                    json={
+                        "model": "gpt-4o-mini",
+                        "messages": messages,
+                        "max_tokens": 600,
+                        "temperature": 0.3
+                    }
                 )
+                if res.status_code == 200:
+                    data = res.json()
+                    reply_text = data["choices"][0]["message"]["content"]
+                    return ChatResponse(
+                        reply=reply_text.strip(),
+                        mode="llm_openai",
+                        context_tab=tab,
+                        suggested_questions=suggested
+                    )
         except Exception:
             pass
 
-    # 4. Check for OpenAI
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    if openai_key:
-        try:
-            import openai
-            client = openai.OpenAI(api_key=openai_key)
-            messages = [{"role": "system", "content": system_prompt}]
-            if req.history:
-                for h in req.history[-4:]:
-                    messages.append({"role": h.role, "content": h.content})
-            messages.append({"role": "user", "content": req.message})
-            res = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                max_tokens=600,
-                temperature=0.3
-            )
-            reply_text = res.choices[0].message.content
-            if reply_text:
-                return ChatResponse(
-                    reply=reply_text.strip(),
-                    mode="llm_openai",
-                    context_tab=tab,
-                    suggested_questions=suggested
-                )
-        except Exception:
-            pass
 
-    # 5. Built-in High-Performance Domain Intelligence Engine
     reply = generate_domain_explanation(req.message, ctx)
     return ChatResponse(
         reply=reply,

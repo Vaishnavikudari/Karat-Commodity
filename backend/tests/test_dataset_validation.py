@@ -56,10 +56,10 @@ def test_3_multiple_expiries_not_double_counting_trading_days(clean_df: pd.DataF
     """
     date_counts = clean_df["date"].nunique()
     assert date_counts == 59
-    # On 2026-09-29 there are 24 rows across 4 contracts (6 expiries each)
+
     sep29_rows = clean_df[clean_df["date"] == "2026-09-29"]
     assert len(sep29_rows) == 24
-    # But date count remains strictly 1 trading day
+
     assert sep29_rows["date"].nunique() == 1
 
 
@@ -73,10 +73,10 @@ def test_4_older_observations_not_lost_when_newer_added(clean_df: pd.DataFrame):
     assert len(sep_rows) > 0, "September rows missing"
     assert len(oct_rows) > 0, "October rows missing"
 
-    # Total distinct trading days per month: 21 in Aug + 22 in Sep + 16 in Oct = 59
+
     assert aug_rows["date"].nunique() == 21
     assert sep_rows["date"].nunique() == 22
-    assert oct_rows["date"].nunique() == 16  # up to 23 Oct (with Oct 2 Gandhi Jayanti holiday)
+    assert oct_rows["date"].nunique() == 16
     assert 21 + 22 + 16 == 59
 
 
@@ -108,12 +108,12 @@ def test_7_goldm_goldten_comparison_carry_rule(clean_df: pd.DataFrame):
     goldm_front = oct14[(oct14["symbol"] == "GOLDM") & (oct14["expiry_date"] == "2026-11-05")].iloc[0]
     goldten_front = oct14[(oct14["symbol"] == "GOLDTEN") & (oct14["expiry_date"] == "2026-10-30")].iloc[0]
 
-    # Expiries differ by 6 calendar days
+
     d_m = dt.date.fromisoformat(goldm_front["expiry_date"])
     d_t = dt.date.fromisoformat(goldten_front["expiry_date"])
     diff_days = (d_m - d_t).days
     assert diff_days == 6
-    # Both are validly observed and normalized on common 999 scale
+
     assert goldm_front["norm_close"] > 0
     assert goldten_front["norm_close"] > 0
 

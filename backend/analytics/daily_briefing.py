@@ -35,12 +35,12 @@ def compute_daily_briefing(
             "message": "Not enough data yet",
         }
 
-    # Standardize column names and deduplicate
+
     work_df = df.copy()
     work_df.columns = [c.lower() for c in work_df.columns]
     work_df = work_df.loc[:, ~work_df.columns.duplicated()]
 
-    # Get distinct sorted trading dates
+
     unique_dates = sorted(work_df["date"].astype(str).unique().tolist())
     trading_days_loaded = len(unique_dates)
 
@@ -57,11 +57,11 @@ def compute_daily_briefing(
     df_today = work_df[work_df["date"].astype(str).str.startswith(date_today)].copy()
     df_prev = work_df[work_df["date"].astype(str).str.startswith(date_yesterday)].copy()
 
-    # 1. Price Changes per Contract (Active/Near Expiry)
+
     price_changes: list[dict[str, Any]] = []
     facts_list: list[str] = []
 
-    # Map benchmark GOLDTEN quotes for same-expiry gap comparison
+
     goldten_today_by_exp: dict[str, float] = {}
     goldten_prev_by_exp: dict[str, float] = {}
 
@@ -82,19 +82,19 @@ def compute_daily_briefing(
         "total_oi_prev": int(df_prev["oi_lots"].sum()) if "oi_lots" in df_prev.columns else 0,
     }
 
-    # Group by symbol taking the most liquid/active contract for price change reporting
+
     for sym in ["GOLDM", "GOLDTEN", "GOLDGUINEA", "GOLDPETAL"]:
         sym_today = df_today[df_today["symbol"] == sym]
         if sym_today.empty:
             continue
 
-        # Sort by volume descending to select active front contract
+
         active_today = sym_today.sort_values("volume_lots", ascending=False).iloc[0]
         exp = str(active_today["expiry_date"])
         norm_close = float(active_today.get("norm_close", 0.0) or 0.0)
         norm_prev_close = float(active_today.get("norm_prev_close", 0.0) or 0.0)
 
-        # Look up matching row from previous day
+
         sym_prev = df_prev[(df_prev["symbol"] == sym) & (df_prev["expiry_date"] == exp)]
         if not sym_prev.empty and norm_prev_close == 0:
             norm_prev_close = float(sym_prev.iloc[0].get("norm_close", 0.0) or 0.0)
@@ -116,7 +116,7 @@ def compute_daily_briefing(
         sign = "+" if chg_rs >= 0 else ""
         facts_list.append(f"{sym} ({exp}) moved {sign}₹{chg_rs:g}/g ({sign}{pct_chg:.2f}%) to ₹{norm_close:.2f}/g.")
 
-    # 2. Same-Expiry Gap vs GOLDTEN Today vs Yesterday
+
     for _, row in df_today.iterrows():
         sym = str(row["symbol"])
         exp = str(row["expiry_date"])
@@ -129,7 +129,7 @@ def compute_daily_briefing(
             if g_today > 0 and norm_c > 0:
                 gap_today_bps = round(((norm_c - g_today) / g_today) * 10_000.0, 1)
 
-                # Previous day gap
+
                 gap_prev_bps: Optional[float] = None
                 gap_chg_bps: Optional[float] = None
 
@@ -153,7 +153,7 @@ def compute_daily_briefing(
                         f"Same-expiry gap for {sym} ({exp}) vs GOLDTEN shifted {chg_sign}{gap_chg_bps:g} bps to {gap_today_bps:+g} bps."
                     )
 
-    # 3. Contracts 5 days or fewer from expiry
+
     for _, row in df_today.iterrows():
         days = int(row.get("days_to_expiry", 999) or 999)
         if days <= 5:
@@ -170,18 +170,17 @@ def compute_daily_briefing(
     else:
         facts_list.append("Zero contracts currently within the 5-day tender window.")
 
-    # 4. Liquidity Changes
+
     vol_chg_pct = round(((liquidity_summary["total_volume_today"] - liquidity_summary["total_volume_prev"]) / liquidity_summary["total_volume_prev"]) * 100.0, 1) if liquidity_summary["total_volume_prev"] > 0 else 0.0
     facts_list.append(
         f"Total exchange turnover: {liquidity_summary['total_volume_today']:,} lots ({liquidity_summary['total_grams_today']/1000:,.1f} kg), shifted {vol_chg_pct:+.1f}% vs previous session."
     )
 
-    # 5. Data Hygiene Warnings
-    # Check no-trade rows in today's session
+
     no_trade_today = df_today[df_today["no_trade"] == True]
     no_trade_count = len(no_trade_today)
 
-    # Ingest quality report if available
+
     rejected_files_count = 0
     missing_weekdays_count = 0
     missing_weekdays: list[str] = []
@@ -216,8 +215,7 @@ def compute_daily_briefing(
     else:
         facts_list.append("Data hygiene: zero no-trade rows; clean date sequence.")
 
-    # 6. Template-Written Summary (Strictly <= 80 words built ONLY from facts)
-    # Pick lead price change and gap for concise summary
+
     lead_change = price_changes[0] if price_changes else None
     lead_sym = lead_change["symbol"] if lead_change else "MCX Gold"
     lead_sign = "+" if (lead_change and lead_change["change_rs_per_g"] >= 0) else ""
@@ -245,7 +243,7 @@ def compute_daily_briefing(
 
     template_summary = " ".join(template_parts)
 
-    # Word count clamp check
+
     words = template_summary.split()
     if len(words) > 80:
         template_summary = " ".join(words[:80]) + "."
