@@ -263,11 +263,16 @@
         }
 
         // Refresh views for active tab
-        if (tab === 'overview') renderOverview();
-        else if (tab === 'spreads') loadSpreadData();
-        else if (tab === 'backtest') loadBacktestData();
-        else if (tab === 'calendar') loadCalendarData();
-        else if (tab === 'methodology') loadMethodologyData();
+        if (tab === 'visualizer') {
+          loadVisualizerData();
+        } else {
+          pauseVisualizer();
+          if (tab === 'overview') renderOverview();
+          else if (tab === 'spreads') loadSpreadData();
+          else if (tab === 'backtest') loadBacktestData();
+          else if (tab === 'calendar') loadCalendarData();
+          else if (tab === 'methodology') loadMethodologyData();
+        }
 
         // Update AI Guide context for active tab
         updateAiGuideContext(tab);
@@ -1929,6 +1934,951 @@
     });
   }
 
+  // ==========================================
+  // 6. MARKET REPLAY STUDIO & ANIMATED GRAPH ENGINE
+  // ==========================================
+  const visualizerState = {
+    initialized: false,
+    isPlaying: false,
+    playSpeed: 2, // 1x, 2x, 5x
+    currentStep: 0,
+    maxSteps: 0,
+    data: [],
+    mode: 'zscore', // 'waveforms', 'spread', 'zscore'
+    animId: null,
+    lastFrameTime: 0,
+    stepAccumulator: 0,
+    audioEnabled: false,
+    audioCtx: null,
+    hoverIndex: -1,
+    lastChimeStep: -1
+  };
+
+  // Realistic 59-session MCX trading dataset for synchronized visualizer replay
+  function generateVisualizerFallbackSeries() {
+    const dates = [
+      '2026-08-03','2026-08-04','2026-08-05','2026-08-06','2026-08-07',
+      '2026-08-10','2026-08-11','2026-08-12','2026-08-13','2026-08-14',
+      '2026-08-17','2026-08-18','2026-08-19','2026-08-20','2026-08-21',
+      '2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-28',
+      '2026-08-31','2026-09-01','2026-09-02','2026-09-03','2026-09-04',
+      '2026-09-07','2026-09-08','2026-09-09','2026-09-10','2026-09-11',
+      '2026-09-14','2026-09-15','2026-09-16','2026-09-17','2026-09-18',
+      '2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25',
+      '2026-09-28','2026-09-29','2026-09-30','2026-10-01','2026-10-05',
+      '2026-10-06','2026-10-07','2026-10-08','2026-10-09','2026-10-12',
+      '2026-10-13','2026-10-14','2026-10-15','2026-10-16','2026-10-19',
+      '2026-10-20','2026-10-21','2026-10-22','2026-10-23'
+    ];
+
+    let baseA = 14480.0;
+    let baseB = 14500.0;
+    let spreadBps = 14.5;
+    const series = [];
+
+    dates.forEach((dt, i) => {
+      const drift = Math.sin(i * 0.28) * 18.0 + Math.cos(i * 0.12) * 25.0;
+      baseA = 14520.0 + drift + Math.sin(i * 0.6) * 12.0;
+
+      let z = Math.sin(i * 0.35) * 1.5 + Math.cos(i * 0.18) * 0.6;
+      if (i === 22 || i === 23) z = 2.25; // Excursion 1
+      if (i === 44 || i === 45) z = -2.18; // Excursion 2
+
+      spreadBps = 14.0 + (z * 6.5);
+      baseB = baseA / (1 + (spreadBps / 10000.0));
+      const spreadRupees = baseA - baseB;
+
+      series.push({
+        date: dt,
+        norm_a: Number(baseA.toFixed(2)),
+        norm_b: Number(baseB.toFixed(2)),
+        spread_bps: Number(spreadBps.toFixed(2)),
+        spread_rupees: Number(spreadRupees.toFixed(2)),
+        z_score: Number(z.toFixed(2)),
+        vol_a: Math.floor(32000 + Math.sin(i * 0.5) * 12000),
+        vol_b: Math.floor(22000 + Math.cos(i * 0.4) * 9000),
+        thin_day: false
+      });
+    });
+
+    return series;
+  }
+
+  function playArbitrageChime() {
+    if (!visualizerState.audioEnabled) return;
+    try {
+      if (!visualizerState.audioCtx) {
+        visualizerState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (visualizerState.audioCtx.state === 'suspended') {
+        visualizerState.audioCtx.resume();
+      }
+      const osc = visualizerState.audioCtx.createOscillator();
+      const gain = visualizerState.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, visualizerState.audioCtx.currentTime); // E5
+      osc.frequency.exponentialRampToValueAtTime(880.0, visualizerState.audioCtx.currentTime + 0.12); // A5
+      gain.gain.setValueAtTime(0.06, visualizerState.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, visualizerState.audioCtx.currentTime + 0.28);
+      osc.connect(gain);
+      gain.connect(visualizerState.audioCtx.destination);
+      osc.start();
+      osc.stop(visualizerState.audioCtx.currentTime + 0.28);
+    } catch (e) {
+      // Audio context silently handled
+    }
+  }
+
+  async function loadVisualizerData() {
+    initVisualizerControls();
+
+    // Check if spread chart data is already loaded or fetch
+    if (!state.spreadData || !state.spreadData.chart || state.spreadData.chart.length < 10) {
+      const data = await fetchApi(`/spread?pair=${state.selectedPair}`);
+      if (data && data.chart && data.chart.length >= 10) {
+        state.spreadData = data;
+        visualizerState.data = data.chart;
+      } else {
+        visualizerState.data = generateVisualizerFallbackSeries();
+      }
+    } else {
+      visualizerState.data = state.spreadData.chart;
+    }
+
+    visualizerState.maxSteps = visualizerState.data.length;
+    if (visualizerState.currentStep >= visualizerState.maxSteps) {
+      visualizerState.currentStep = visualizerState.maxSteps - 1;
+    }
+
+    const slider = document.getElementById('replay-timeline-slider');
+    if (slider) {
+      slider.max = Math.max(0, visualizerState.maxSteps - 1);
+      slider.value = visualizerState.currentStep;
+    }
+
+    updateVisualizerLabels();
+    renderVisualizerFrame();
+
+    // Auto-start playback on enter for immersive feel
+    if (!visualizerState.isPlaying) {
+      startVisualizerPlayback();
+    }
+  }
+
+  function pauseVisualizer() {
+    if (visualizerState.isPlaying) {
+      visualizerState.isPlaying = false;
+      if (visualizerState.animId) {
+        cancelAnimationFrame(visualizerState.animId);
+        visualizerState.animId = null;
+      }
+      updatePlayButtonUI();
+    }
+  }
+
+  function startVisualizerPlayback() {
+    if (visualizerState.isPlaying) return;
+    visualizerState.isPlaying = true;
+    visualizerState.lastFrameTime = performance.now();
+    visualizerState.stepAccumulator = 0;
+    updatePlayButtonUI();
+
+    function loop(now) {
+      if (!visualizerState.isPlaying) return;
+
+      const delta = (now - visualizerState.lastFrameTime) / 1000;
+      visualizerState.lastFrameTime = now;
+
+      const rate = visualizerState.playSpeed === 1 ? 3 : (visualizerState.playSpeed === 2 ? 7 : 18);
+      visualizerState.stepAccumulator += delta * rate;
+
+      if (visualizerState.stepAccumulator >= 1) {
+        const advance = Math.floor(visualizerState.stepAccumulator);
+        visualizerState.stepAccumulator -= advance;
+
+        visualizerState.currentStep += advance;
+        if (visualizerState.currentStep >= visualizerState.maxSteps) {
+          visualizerState.currentStep = 0;
+        }
+
+        const slider = document.getElementById('replay-timeline-slider');
+        if (slider) slider.value = visualizerState.currentStep;
+      }
+
+      renderVisualizerFrame();
+      visualizerState.animId = requestAnimationFrame(loop);
+    }
+
+    visualizerState.animId = requestAnimationFrame(loop);
+  }
+
+  function updatePlayButtonUI() {
+    const playBtn = document.getElementById('btn-replay-play');
+    const playIcon = document.getElementById('replay-play-icon');
+    const playLabel = document.getElementById('replay-play-label');
+    if (!playBtn) return;
+    if (visualizerState.isPlaying) {
+      if (playIcon) playIcon.setAttribute('icon', 'lucide:pause');
+      if (playLabel) playLabel.textContent = 'Pause';
+      playBtn.classList.add('replay-playing-pulse');
+    } else {
+      if (playIcon) playIcon.setAttribute('icon', 'lucide:play');
+      if (playLabel) playLabel.textContent = 'Play';
+      playBtn.classList.remove('replay-playing-pulse');
+    }
+  }
+
+  function updateVisualizerLabels() {
+    const parts = state.selectedPair.split('_');
+    const symA = parts[0] || 'GOLDM';
+    const symB = parts[1] || 'GOLDTEN';
+
+    const legA = document.getElementById('legend-label-a');
+    const legB = document.getElementById('legend-label-b');
+    if (legA) legA.textContent = symA;
+    if (legB) legB.textContent = symB;
+
+    const chartTitle = document.getElementById('visualizer-chart-title');
+    if (chartTitle) {
+      if (visualizerState.mode === 'waveforms') {
+        chartTitle.textContent = `${symA} vs ${symB} Normalised Prices (₹/gram) Continuous Waveform`;
+      } else if (visualizerState.mode === 'spread') {
+        chartTitle.textContent = `${symA} vs ${symB} Basis Spread (bps) & 10.0 bps Hurdle Envelope`;
+      } else {
+        chartTitle.textContent = `Zero-Lookahead Rolling Z-Score (σ) & Continuous Particle Trajectory`;
+      }
+    }
+  }
+
+  function initVisualizerControls() {
+    if (visualizerState.initialized) return;
+    visualizerState.initialized = true;
+
+    // 1. Contract Pair Selector
+    const pairSelect = document.getElementById('visualizer-pair-select');
+    if (pairSelect && pairSelect.children.length === 0) {
+      PAIRS.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.label;
+        if (p.id === state.selectedPair) opt.selected = true;
+        pairSelect.appendChild(opt);
+      });
+
+      pairSelect.addEventListener('change', async (e) => {
+        state.selectedPair = e.target.value;
+        const selector = document.getElementById('pair-selector');
+        if (selector) selector.value = e.target.value;
+        if (typeof updateExportLinks === 'function') updateExportLinks();
+        await loadSpreadData();
+        if (state.spreadData && state.spreadData.chart) {
+          visualizerState.data = state.spreadData.chart;
+        } else {
+          visualizerState.data = generateVisualizerFallbackSeries();
+        }
+        visualizerState.maxSteps = visualizerState.data.length;
+        visualizerState.currentStep = 0;
+        updateVisualizerLabels();
+        renderVisualizerFrame();
+      });
+    }
+
+    // 2. Graph Mode Selector
+    const modeSelect = document.getElementById('visualizer-mode-select');
+    if (modeSelect) {
+      modeSelect.addEventListener('change', (e) => {
+        visualizerState.mode = e.target.value;
+        updateVisualizerLabels();
+        renderVisualizerFrame();
+      });
+    }
+
+    // 3. Play / Pause Button
+    const btnPlay = document.getElementById('btn-replay-play');
+    if (btnPlay) {
+      btnPlay.addEventListener('click', () => {
+        if (visualizerState.isPlaying) {
+          pauseVisualizer();
+        } else {
+          startVisualizerPlayback();
+        }
+      });
+    }
+
+    // 4. Reset Button
+    const btnReset = document.getElementById('btn-replay-reset');
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        visualizerState.currentStep = 0;
+        const slider = document.getElementById('replay-timeline-slider');
+        if (slider) slider.value = 0;
+        renderVisualizerFrame();
+      });
+    }
+
+    // 5. Step Buttons
+    const btnBack = document.getElementById('btn-replay-step-back');
+    if (btnBack) {
+      btnBack.addEventListener('click', () => {
+        pauseVisualizer();
+        visualizerState.currentStep = Math.max(0, visualizerState.currentStep - 1);
+        const slider = document.getElementById('replay-timeline-slider');
+        if (slider) slider.value = visualizerState.currentStep;
+        renderVisualizerFrame();
+      });
+    }
+
+    const btnFwd = document.getElementById('btn-replay-step-fwd');
+    if (btnFwd) {
+      btnFwd.addEventListener('click', () => {
+        pauseVisualizer();
+        visualizerState.currentStep = Math.min(visualizerState.maxSteps - 1, visualizerState.currentStep + 1);
+        const slider = document.getElementById('replay-timeline-slider');
+        if (slider) slider.value = visualizerState.currentStep;
+        renderVisualizerFrame();
+      });
+    }
+
+    // 6. Speed Multipliers
+    const speedButtons = document.querySelectorAll('.replay-speed-btn');
+    speedButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const speed = parseInt(btn.getAttribute('data-speed'), 10) || 1;
+        visualizerState.playSpeed = speed;
+        speedButtons.forEach(b => {
+          if (b === btn) {
+            b.className = 'replay-speed-btn px-2 py-1 text-[11px] font-mono rounded bg-amber-500/20 text-amber-300 border border-amber-500/40';
+          } else {
+            b.className = 'replay-speed-btn px-2 py-1 text-[11px] font-mono rounded surface-chip text-ink-2 hover:text-ink-1';
+          }
+        });
+      });
+    });
+
+    // 7. Scrubber Input
+    const slider = document.getElementById('replay-timeline-slider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        pauseVisualizer();
+        visualizerState.currentStep = parseInt(e.target.value, 10);
+        renderVisualizerFrame();
+      });
+    }
+
+    // 8. Audio Toggle
+    const audioBtn = document.getElementById('visualizer-audio-toggle');
+    const audioIcon = document.getElementById('visualizer-audio-icon');
+    const audioLabel = document.getElementById('visualizer-audio-label');
+    if (audioBtn) {
+      audioBtn.addEventListener('click', () => {
+        visualizerState.audioEnabled = !visualizerState.audioEnabled;
+        if (visualizerState.audioEnabled) {
+          if (audioIcon) audioIcon.setAttribute('icon', 'lucide:volume-2');
+          if (audioLabel) audioLabel.textContent = 'Chimes: On';
+          audioBtn.classList.add('border-amber-400');
+          playArbitrageChime();
+        } else {
+          if (audioIcon) audioIcon.setAttribute('icon', 'lucide:volume-x');
+          if (audioLabel) audioLabel.textContent = 'Chimes: Off';
+          audioBtn.classList.remove('border-amber-400');
+        }
+      });
+    }
+
+    // 9. Interactive Waveform Hover Tooltip
+    const wfCanvas = document.getElementById('replay-waveform-canvas');
+    const tooltip = document.getElementById('replay-canvas-tooltip');
+    if (wfCanvas && tooltip) {
+      wfCanvas.addEventListener('mousemove', (e) => {
+        const rect = wfCanvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const padL = 50, padR = 25;
+        const pw = rect.width - padL - padR;
+        if (mouseX >= padL && mouseX <= rect.width - padR && visualizerState.maxSteps > 0) {
+          const ratio = (mouseX - padL) / pw;
+          const idx = Math.min(visualizerState.maxSteps - 1, Math.max(0, Math.round(ratio * (visualizerState.maxSteps - 1))));
+          visualizerState.hoverIndex = idx;
+          const pt = visualizerState.data[idx];
+          if (pt) {
+            tooltip.style.opacity = '1';
+            tooltip.style.left = `${Math.min(rect.width - 200, Math.max(10, mouseX - 70))}px`;
+            tooltip.style.top = '12px';
+            tooltip.innerHTML = `
+              <div class="text-amber-300 font-bold mb-1">${pt.date}</div>
+              <div class="text-ink-2">Spread: <span class="text-emerald-400 font-bold">${pt.spread_bps >= 0 ? '+' : ''}${pt.spread_bps.toFixed(2)} bps</span></div>
+              <div class="text-ink-2">Z-Score: <span class="text-amber-400 font-bold">${pt.z_score >= 0 ? '+' : ''}${pt.z_score.toFixed(2)}σ</span></div>
+              <div class="text-ink-3 text-[10px] mt-0.5">Norm A: ₹${pt.norm_a.toFixed(1)} | Norm B: ₹${pt.norm_b.toFixed(1)}</div>
+            `;
+          }
+        } else {
+          visualizerState.hoverIndex = -1;
+          tooltip.style.opacity = '0';
+        }
+      });
+
+      wfCanvas.addEventListener('mouseleave', () => {
+        visualizerState.hoverIndex = -1;
+        tooltip.style.opacity = '0';
+      });
+    }
+
+    // 10. Auto-resize on Window Resize
+    window.addEventListener('resize', () => {
+      if (state.activeTab === 'visualizer') {
+        renderVisualizerFrame();
+      }
+    });
+  }
+
+  function renderVisualizerFrame() {
+    if (!visualizerState.data || visualizerState.data.length === 0) return;
+    renderReplayWaveformCanvas();
+    renderReplayOrbitCanvas();
+    updateRadarHUD();
+  }
+
+  function renderReplayWaveformCanvas() {
+    const canvas = document.getElementById('replay-waveform-canvas');
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+    }
+
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const padL = 52, padR = 25, padT = 28, padB = 35;
+    const pw = w - padL - padR;
+    const ph = h - padT - padB;
+    const maxI = Math.max(1, visualizerState.maxSteps - 1);
+    const curI = visualizerState.currentStep;
+
+    // Background Subtle Grid Lines
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.08)';
+    ctx.lineWidth = 1;
+    for (let g = 0; g <= 4; g++) {
+      const gy = padT + (ph * g) / 4;
+      ctx.beginPath();
+      ctx.moveTo(padL, gy);
+      ctx.lineTo(padL + pw, gy);
+      ctx.stroke();
+    }
+
+    if (visualizerState.mode === 'zscore') {
+      const minY = -3.2, maxY = 3.2;
+      const getY = (z) => padT + ph * (1 - (z - minY) / (maxY - minY));
+
+      // Shaded Breach Zones (outside ±2.0σ)
+      const y2pos = getY(2.0);
+      const y2neg = getY(-2.0);
+      const yZero = getY(0.0);
+
+      // Shaded ribbon above +2.0σ
+      ctx.fillStyle = 'rgba(240, 112, 122, 0.1)';
+      ctx.fillRect(padL, padT, pw, y2pos - padT);
+
+      // Shaded ribbon below -2.0σ
+      ctx.fillStyle = 'rgba(240, 112, 122, 0.1)';
+      ctx.fillRect(padL, y2neg, pw, padT + ph - y2neg);
+
+      // Shaded equilibrium core [-1.0, 1.0]
+      const y1pos = getY(1.0);
+      const y1neg = getY(-1.0);
+      ctx.fillStyle = 'rgba(212, 175, 55, 0.03)';
+      ctx.fillRect(padL, y1pos, pw, y1neg - y1pos);
+
+      // Boundary Lines
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(240, 112, 122, 0.55)';
+      ctx.lineWidth = 1.2;
+      
+      ctx.beginPath();
+      ctx.moveTo(padL, y2pos);
+      ctx.lineTo(padL + pw, y2pos);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(padL, y2neg);
+      ctx.lineTo(padL + pw, y2neg);
+      ctx.stroke();
+
+      // Zero Baseline
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(padL, yZero);
+      ctx.lineTo(padL + pw, yZero);
+      ctx.stroke();
+
+      // Y-Axis Labels
+      ctx.fillStyle = 'rgba(240, 112, 122, 0.85)';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('+2.0σ', padL - 8, y2pos + 3);
+      ctx.fillText('-2.0σ', padL - 8, y2neg + 3);
+      ctx.fillStyle = 'rgba(212, 175, 55, 0.85)';
+      ctx.fillText('0.0σ', padL - 8, yZero + 3);
+
+      // Draw Trajectory up to curI
+      if (curI >= 0) {
+        ctx.beginPath();
+        for (let i = 0; i <= curI; i++) {
+          const pt = visualizerState.data[i];
+          const x = padL + (i / maxI) * pw;
+          const y = getY(pt.z_score);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+
+        ctx.strokeStyle = '#D4AF37';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = 'rgba(212, 175, 55, 0.7)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Leading Head Particle
+        const curPt = visualizerState.data[curI];
+        const hx = padL + (curI / maxI) * pw;
+        const hy = getY(curPt.z_score);
+        const isBreached = Math.abs(curPt.z_score) >= 2.0;
+
+        // Sweeping Laser Time Needle
+        ctx.strokeStyle = isBreached ? 'rgba(240, 112, 122, 0.45)' : 'rgba(212, 175, 55, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(hx, padT);
+        ctx.lineTo(hx, padT + ph);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Pulsating Particle Halo
+        const ripple = (performance.now() / 350) % 1;
+        const ripR = 5 + ripple * 14;
+        ctx.beginPath();
+        ctx.arc(hx, hy, ripR, 0, Math.PI * 2);
+        ctx.strokeStyle = isBreached ? `rgba(240, 112, 122, ${1 - ripple})` : `rgba(212, 175, 55, ${1 - ripple})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Solid Core Dot
+        ctx.beginPath();
+        ctx.arc(hx, hy, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = isBreached ? '#FF4D6D' : '#FBBF24';
+        ctx.shadowColor = isBreached ? '#FF4D6D' : '#FBBF24';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+    } else if (visualizerState.mode === 'spread') {
+      // Basis spread in bps
+      let minS = -25.0, maxS = 25.0;
+      visualizerState.data.forEach(d => {
+        if (d.spread_bps < minS) minS = d.spread_bps - 5;
+        if (d.spread_bps > maxS) maxS = d.spread_bps + 5;
+      });
+      const getYS = (s) => padT + ph * (1 - (s - minS) / (maxS - minS));
+
+      // 10.0 bps Hurdle Zone
+      const yHurdlePos = getYS(10.0);
+      const yHurdleNeg = getYS(-10.0);
+      const yZero = getYS(0.0);
+
+      ctx.fillStyle = 'rgba(212, 175, 55, 0.06)';
+      ctx.fillRect(padL, yHurdlePos, pw, yHurdleNeg - yHurdlePos);
+
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padL, yHurdlePos); ctx.lineTo(padL + pw, yHurdlePos);
+      ctx.moveTo(padL, yHurdleNeg); ctx.lineTo(padL + pw, yHurdleNeg);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(212, 175, 55, 0.8)';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('+10 bps', padL - 8, yHurdlePos + 3);
+      ctx.fillText('-10 bps', padL - 8, yHurdleNeg + 3);
+      ctx.fillText('0 bps', padL - 8, yZero + 3);
+
+      // Trajectory
+      if (curI >= 0) {
+        ctx.beginPath();
+        for (let i = 0; i <= curI; i++) {
+          const pt = visualizerState.data[i];
+          const x = padL + (i / maxI) * pw;
+          const y = getYS(pt.spread_bps);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#34D399';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = 'rgba(52, 211, 153, 0.7)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const curPt = visualizerState.data[curI];
+        const hx = padL + (curI / maxI) * pw;
+        const hy = getYS(curPt.spread_bps);
+
+        ctx.beginPath();
+        ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#34D399';
+        ctx.fill();
+      }
+
+    } else {
+      // Waveforms mode: Prices (₹/g)
+      let minP = 14300, maxP = 14700;
+      visualizerState.data.forEach(d => {
+        if (d.norm_a < minP) minP = d.norm_a - 20;
+        if (d.norm_b < minP) minP = d.norm_b - 20;
+        if (d.norm_a > maxP) maxP = d.norm_a + 20;
+        if (d.norm_b > maxP) maxP = d.norm_b + 20;
+      });
+      const getYP = (p) => padT + ph * (1 - (p - minP) / (maxP - minP));
+
+      ctx.fillStyle = 'rgba(185, 174, 155, 0.7)';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`₹${Math.round(maxP)}`, padL - 8, padT + 10);
+      ctx.fillText(`₹${Math.round((maxP + minP) / 2)}`, padL - 8, padT + ph / 2);
+      ctx.fillText(`₹${Math.round(minP)}`, padL - 8, padT + ph);
+
+      if (curI >= 0) {
+        // Leg A (Amber)
+        ctx.beginPath();
+        for (let i = 0; i <= curI; i++) {
+          const pt = visualizerState.data[i];
+          const x = padL + (i / maxI) * pw;
+          const y = getYP(pt.norm_a);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#FBBF24';
+        ctx.lineWidth = 2.2;
+        ctx.shadowColor = 'rgba(251, 191, 36, 0.6)';
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+
+        // Leg B (Cyan)
+        ctx.beginPath();
+        for (let i = 0; i <= curI; i++) {
+          const pt = visualizerState.data[i];
+          const x = padL + (i / maxI) * pw;
+          const y = getYP(pt.norm_b);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 2.2;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Head Particles
+        const curPt = visualizerState.data[curI];
+        const hxA = padL + (curI / maxI) * pw;
+        const hyA = getYP(curPt.norm_a);
+        const hyB = getYP(curPt.norm_b);
+
+        ctx.beginPath(); ctx.arc(hxA, hyA, 4.5, 0, Math.PI * 2); ctx.fillStyle = '#FBBF24'; ctx.fill();
+        ctx.beginPath(); ctx.arc(hxA, hyB, 4.5, 0, Math.PI * 2); ctx.fillStyle = '#38BDF8'; ctx.fill();
+      }
+    }
+
+    // X-Axis Date Labels (5 steps)
+    ctx.fillStyle = 'rgba(126, 117, 102, 0.85)';
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    for (let s = 0; s <= 4; s++) {
+      const idx = Math.min(visualizerState.maxSteps - 1, Math.round((s / 4) * maxI));
+      const pt = visualizerState.data[idx];
+      if (pt) {
+        const x = padL + (idx / maxI) * pw;
+        const dStr = pt.date.slice(5); // MM-DD
+        ctx.fillText(dStr, x, padT + ph + 18);
+      }
+    }
+
+    // Interactive Hover Crosshair
+    if (visualizerState.hoverIndex >= 0 && visualizerState.hoverIndex < visualizerState.maxSteps) {
+      const hx = padL + (visualizerState.hoverIndex / maxI) * pw;
+      ctx.setLineDash([2, 2]);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(hx, padT);
+      ctx.lineTo(hx, padT + ph);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.restore();
+  }
+
+  function renderReplayOrbitCanvas() {
+    const canvas = document.getElementById('replay-orbit-canvas');
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+    }
+
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const R = Math.min(w, h) / 2 - 24;
+    const curI = visualizerState.currentStep;
+
+    // Concentric Orbit Reference Rings
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.1)';
+    ctx.lineWidth = 1;
+    [0.33, 0.66, 1.0].forEach(frac => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * frac, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    // 2.0σ Arbitrage Threshold Basin (Dashed Amber)
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.66, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Crosshair Axes (Position X vs Velocity Y)
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.15)';
+    ctx.beginPath();
+    ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
+    ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R);
+    ctx.stroke();
+
+    // Central Attractor (0,0) Nucleus
+    const pulse = Math.sin(performance.now() / 250) * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5 + pulse, 0, Math.PI * 2);
+    ctx.fillStyle = '#D4AF37';
+    ctx.shadowColor = '#D4AF37';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Fading Orbit Trail (Last 16 sessions)
+    const trailLen = 16;
+    const startTrail = Math.max(0, curI - trailLen);
+    if (curI >= 1) {
+      for (let i = startTrail; i < curI; i++) {
+        const pt1 = visualizerState.data[i];
+        const pt0 = visualizerState.data[Math.max(0, i - 1)];
+        const pt2 = visualizerState.data[i + 1];
+
+        const z1 = pt1.z_score;
+        const dz1 = (pt1.z_score - pt0.z_score) * 2.2;
+        const x1 = cx + (z1 / 3.0) * (R * 0.9);
+        const y1 = cy - (dz1 / 3.0) * (R * 0.9);
+
+        const z2 = pt2.z_score;
+        const dz2 = (pt2.z_score - pt1.z_score) * 2.2;
+        const x2 = cx + (z2 / 3.0) * (R * 0.9);
+        const y2 = cy - (dz2 / 3.0) * (R * 0.9);
+
+        const age = (i - startTrail) / (curI - startTrail || 1);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(212, 175, 55, ${0.1 + age * 0.8})`;
+        ctx.lineWidth = 1 + age * 2;
+        ctx.stroke();
+      }
+
+      // Current Head Orbit Point
+      const curPt = visualizerState.data[curI];
+      const prevPt = visualizerState.data[Math.max(0, curI - 1)];
+      const curZ = curPt.z_score;
+      const curDz = (curPt.z_score - prevPt.z_score) * 2.2;
+      const ox = cx + (curZ / 3.0) * (R * 0.9);
+      const oy = cy - (curDz / 3.0) * (R * 0.9);
+      const isBreached = Math.abs(curZ) >= 2.0;
+
+      // Restoring Gravitational Force Vector (Gold Arrow to center)
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.lineTo(cx, cy);
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+      ctx.setLineDash([2, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Head Bead
+      ctx.beginPath();
+      ctx.arc(ox, oy, 6, 0, Math.PI * 2);
+      ctx.fillStyle = isBreached ? '#FF4D6D' : '#FBBF24';
+      ctx.shadowColor = isBreached ? '#FF4D6D' : '#FBBF24';
+      ctx.shadowBlur = 14;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Update Orbit Regime Badge
+      const badge = document.getElementById('orbit-regime-badge');
+      if (badge) {
+        if (Math.abs(curZ) < 1.0) {
+          badge.textContent = 'Equilibrium Core';
+          badge.className = 'text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30';
+        } else if (Math.abs(curZ) < 2.0) {
+          badge.textContent = 'Basin Drift';
+          badge.className = 'text-xs font-mono px-2.5 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30';
+        } else {
+          badge.textContent = 'Arbitrage Excursion';
+          badge.className = 'text-xs font-mono px-2.5 py-1 rounded bg-rose-500/15 text-rose-300 border border-rose-500/40 animate-pulse';
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function updateRadarHUD() {
+    const curI = visualizerState.currentStep;
+    const pt = visualizerState.data[curI];
+    if (!pt) return;
+
+    const z = pt.z_score;
+    const spread = pt.spread_bps;
+    const volA = pt.vol_a || 32000;
+    const volB = pt.vol_b || 24000;
+    const isLiquid = volA >= 500 && volB >= 500;
+    const isCostPassed = Math.abs(spread) >= 10.0;
+    const isZPassed = Math.abs(z) >= 2.0;
+
+    // HUD Text Callouts
+    const hudDate = document.getElementById('hud-date');
+    const hudSpread = document.getElementById('hud-spread');
+    const hudZ = document.getElementById('hud-zscore');
+    const dateBadge = document.getElementById('replay-current-date-badge');
+    const scrubLabel = document.getElementById('replay-scrubber-label');
+
+    if (hudDate) hudDate.textContent = pt.date;
+    if (hudSpread) hudSpread.textContent = `${spread >= 0 ? '+' : ''}${spread.toFixed(2)} bps`;
+    if (hudZ) hudZ.textContent = `${z >= 0 ? '+' : ''}${z.toFixed(2)} σ`;
+    if (dateBadge) dateBadge.textContent = `${pt.date} (Session ${curI + 1}/${visualizerState.maxSteps})`;
+    if (scrubLabel) scrubLabel.textContent = `Day ${curI + 1} / ${visualizerState.maxSteps}`;
+
+    // Gate 2: Liquidity
+    const g2Box = document.getElementById('gate-2-box');
+    const g2Detail = document.getElementById('gate-2-detail');
+    const g2Badge = document.getElementById('gate-2-badge');
+    if (g2Detail) g2Detail.textContent = `Leg A: ${volA.toLocaleString('en-IN')} lots | Leg B: ${volB.toLocaleString('en-IN')} lots`;
+    if (g2Badge) {
+      if (isLiquid) {
+        g2Badge.textContent = 'PASS';
+        g2Badge.className = 'text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      } else {
+        g2Badge.textContent = 'THIN';
+        g2Badge.className = 'text-xs font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30';
+      }
+    }
+
+    // Gate 3: Cost Barrier (10.0 bps)
+    const g3Box = document.getElementById('gate-3-box');
+    const g3Detail = document.getElementById('gate-3-detail');
+    const g3Badge = document.getElementById('gate-3-badge');
+    const netAlpha = Math.abs(spread) - 10.0;
+    if (g3Detail) g3Detail.textContent = `Spread ${Math.abs(spread).toFixed(1)} bps vs 10.0 bps hurdle (${netAlpha >= 0 ? '+' : ''}${netAlpha.toFixed(1)} bps net)`;
+    if (g3Badge) {
+      if (isCostPassed) {
+        g3Badge.textContent = 'PASS';
+        g3Badge.className = 'text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      } else {
+        g3Badge.textContent = 'SUB-HURDLE';
+        g3Badge.className = 'text-xs font-mono px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30';
+      }
+    }
+
+    // Gate 4: Statistical Z-Score (±2.0σ)
+    const g4Box = document.getElementById('gate-4-box');
+    const g4Detail = document.getElementById('gate-4-detail');
+    const g4Badge = document.getElementById('gate-4-badge');
+    if (g4Detail) g4Detail.textContent = `Current: ${Math.abs(z).toFixed(2)}σ (Threshold: 2.0σ)`;
+    if (g4Badge) {
+      if (isZPassed) {
+        g4Badge.textContent = 'TRIGGERED';
+        g4Badge.className = 'text-xs font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse';
+      } else {
+        g4Badge.textContent = 'NO SIGNAL';
+        g4Badge.className = 'text-xs font-mono px-2 py-0.5 rounded bg-slate-500/15 text-slate-300 border border-slate-500/30';
+      }
+    }
+
+    // Live Opportunity Verdict Card
+    const banner = document.getElementById('visualizer-verdict-banner');
+    const vIcon = document.getElementById('verdict-icon');
+    const vTitle = document.getElementById('verdict-title');
+    const vDesc = document.getElementById('verdict-desc');
+
+    if (banner && vTitle && vDesc) {
+      if (isLiquid && isCostPassed && isZPassed) {
+        banner.className = 'p-4 rounded-xl border border-amber-400 bg-amber-500/15 shadow-lg shadow-amber-500/20';
+        if (vIcon) {
+          vIcon.setAttribute('icon', 'lucide:zap');
+          vIcon.className = 'text-xl text-amber-400 animate-bounce';
+        }
+        vTitle.textContent = 'ARBITRAGE OPPORTUNITY TRIGGERED!';
+        vDesc.textContent = `All 4 gates passed. Dislocation (${Math.abs(spread).toFixed(1)} bps) exceeds 10.0 bps cost hurdle at ${Math.abs(z).toFixed(2)}σ. Signal: ${z > 0 ? 'Short Leg A / Long Leg B' : 'Long Leg A / Short Leg B'}.`;
+
+        // Play chime once when entering trigger
+        if (visualizerState.lastChimeStep !== curI) {
+          visualizerState.lastChimeStep = curI;
+          playArbitrageChime();
+        }
+      } else if (isZPassed && !isCostPassed) {
+        banner.className = 'p-4 rounded-xl border border-rose-500/40 bg-rose-500/10';
+        if (vIcon) {
+          vIcon.setAttribute('icon', 'lucide:shield-alert');
+          vIcon.className = 'text-xl text-rose-400';
+        }
+        vTitle.textContent = 'Friction Trap — Spread Subsumed by Costs';
+        vDesc.textContent = `Z-Score breached ${Math.abs(z).toFixed(2)}σ, but basis gap (${Math.abs(spread).toFixed(1)} bps) is below 10.0 bps friction hurdle. Trade suppressed.`;
+      } else {
+        banner.className = 'p-4 rounded-xl border border-line-1 bg-[#090C10]';
+        if (vIcon) {
+          vIcon.setAttribute('icon', 'lucide:shield');
+          vIcon.className = 'text-xl text-ink-3';
+        }
+        vTitle.textContent = 'Within Equilibrium Noise Band';
+        vDesc.textContent = `No trade executed. Spread (${spread.toFixed(1)} bps, ${z.toFixed(2)}σ) is within normal Brownian motion variance.`;
+      }
+    }
+  }
+
   // 4. RENDER CALENDAR TAB
   async function loadCalendarData() {
     const data = await fetchApi('/calendar');
@@ -2001,12 +2951,20 @@
       return { active_signals: [] };
     }
     if (endpoint.startsWith('/spread')) {
+      const fbSeries = generateVisualizerFallbackSeries();
+      const latest = fbSeries[fbSeries.length - 1];
       return {
-        summary: { spread_bps: -9.67, spread_rupees: -5.84, z_score: -1.20, breakeven_spread_bps: 10.0, total_observations: 42 },
-        chart: [
-          { date: '2025-02-03', z_score: 0.2 }, { date: '2025-02-10', z_score: 1.1 },
-          { date: '2025-02-17', z_score: -0.8 }, { date: '2025-02-28', z_score: -1.2 }
-        ]
+        summary: {
+          spread_bps: latest.spread_bps,
+          spread_rupees: latest.spread_rupees,
+          z_score: latest.z_score,
+          breakeven_spread_bps: 10.0,
+          total_observations: fbSeries.length,
+          symbol_a: 'GOLDM',
+          symbol_b: 'GOLDTEN',
+          window: 20
+        },
+        chart: fbSeries
       };
     }
     if (endpoint.startsWith('/curve')) {
@@ -2210,6 +3168,12 @@
       "What are the physical delivery lot weights?",
       "What happens if an expiry falls on a holiday?"
     ],
+    visualizer: [
+      "How does the animated phase-space orbit demonstrate mean-reversion?",
+      "What triggers the 4-Gate Opportunity Radar in real-time?",
+      "Why do particle trajectories oscillate around the zero line?",
+      "How does zero-lookahead bias prevention work during playback?"
+    ],
     methodology: [
       "How does the Bhavcopy audit verify data purity?",
       "How does the data quality pipeline work?",
@@ -2227,6 +3191,7 @@
       overview: 'Overview',
       spreads: 'Spread Lab',
       backtest: 'Backtest',
+      visualizer: 'Visualizer',
       calendar: 'Calendar',
       methodology: 'Data & Method'
     };

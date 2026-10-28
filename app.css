@@ -1836,3 +1836,67 @@ body,
   }
 }
 
+/* ==========================================================================
+   VISUALIZER / MARKET REPLAY STUDIO STYLES
+   ========================================================================== */
+#panel-visualizer canvas {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+#replay-timeline-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  height: 6px;
+  border-radius: 999px;
+  outline: none;
+  transition: background 0.2s;
+}
+
+#replay-timeline-slider:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#replay-timeline-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold-400);
+  border: 2px solid var(--bg-0);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.7);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#replay-timeline-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.95);
+}
+
+#replay-timeline-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold-400);
+  border: 2px solid var(--bg-0);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.7);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.replay-playing-pulse {
+  animation: replayPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes replayPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.6);
+  }
+}
+

@@ -188,6 +188,7 @@
             <button data-tab="overview" class="nav-tab-btn active relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Overview</button>
             <button data-tab="spreads" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Spread Lab</button>
             <button data-tab="backtest" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Backtest</button>
+            <button data-tab="visualizer" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium flex items-center gap-1.5"><iconify-icon icon="lucide:play-circle" class="text-amber-400 text-sm"></iconify-icon><span>Visualizer</span></button>
             <button data-tab="calendar" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Calendar</button>
             <button data-tab="methodology" class="nav-tab-btn relative z-10 px-5 py-2 rounded-full transition-colors cursor-pointer font-medium">Data & Method</button>
           </nav>
@@ -210,6 +211,7 @@
           <button data-tab="overview" class="nav-tab-btn active whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Overview</button>
           <button data-tab="spreads" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Spread Lab</button>
           <button data-tab="backtest" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Backtest</button>
+          <button data-tab="visualizer" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium flex items-center gap-1.5"><iconify-icon icon="lucide:play-circle" class="text-amber-400 text-xs"></iconify-icon><span>Visualizer</span></button>
           <button data-tab="calendar" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Calendar</button>
           <button data-tab="methodology" class="nav-tab-btn whitespace-nowrap px-4.5 py-2 rounded-full transition-all cursor-pointer font-medium">Data & Method</button>
         </div>
@@ -652,6 +654,248 @@
           </div>
         </section>
 
+        <!-- ==================================================================
+             TAB 6: MARKET REPLAY & ANIMATED GRAPH STUDIO (VISUALIZER)
+             ================================================================== -->
+        <section id="panel-visualizer" class="tab-content-panel hidden space-y-6">
+          
+          <!-- Visualizer Header Card & Replay Controls -->
+          <div class="gl-card p-5 sm:p-6 space-y-5">
+            <div class="flex items-center justify-between flex-wrap gap-4 border-b border-line-1 pb-4">
+              <div>
+                <div class="flex items-center gap-3 flex-wrap">
+                  <h2 class="text-lg sm:text-xl font-bold text-ink-1 tracking-wide flex items-center gap-2">
+                    <iconify-icon icon="lucide:play-circle" class="text-amber-400 text-2xl"></iconify-icon>
+                    <span>Market Replay Studio & Animated Spread Dynamics</span>
+                  </h2>
+                  <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>60 FPS Continuous Canvas Accelerator</span>
+                  </span>
+                </div>
+                <p class="text-xs sm:text-sm text-ink-3 mt-1.5 font-sans">
+                  Frame-by-frame synchronized commodity price replay, continuous particle waveforms, and mean-reversion phase-space orbit dynamics across 59 MCX trading sessions.
+                </p>
+              </div>
+
+              <!-- Live Session Badge & Audio Chime Toggle -->
+              <div class="flex items-center gap-3 flex-wrap">
+                <button id="visualizer-audio-toggle" type="button" class="surface-chip px-3 py-1.5 rounded-lg text-xs font-mono text-ink-2 hover:text-ink-1 flex items-center gap-1.5 cursor-pointer transition-colors" title="Toggle audio feedback on arbitrage triggers">
+                  <iconify-icon id="visualizer-audio-icon" icon="lucide:volume-x" class="text-amber-400"></iconify-icon>
+                  <span id="visualizer-audio-label">Chimes: Off</span>
+                </button>
+                <span class="text-xs font-mono text-amber-300 surface-chip px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                  <iconify-icon icon="lucide:clock"></iconify-icon>
+                  <span id="replay-current-date-badge">2026-10-23 (Session 59/59)</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Replay Playback Deck Toolbar -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center bg-black/30 p-4 rounded-xl border border-line-1">
+              
+              <!-- Left: Pair & View Mode Selector (lg:col-span-4) -->
+              <div class="lg:col-span-4 flex flex-col sm:flex-row gap-3">
+                <div class="flex-1">
+                  <label for="visualizer-pair-select" class="block text-[11px] font-mono text-ink-3 uppercase mb-1">Contract Pair</label>
+                  <select id="visualizer-pair-select" class="w-full bg-[#10141A] border border-line-1 rounded-lg px-3 py-1.5 text-xs font-mono text-ink-1 focus:border-amber-400 focus:outline-none">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+                <div>
+                  <label for="visualizer-mode-select" class="block text-[11px] font-mono text-ink-3 uppercase mb-1">Graph Mode</label>
+                  <select id="visualizer-mode-select" class="w-full bg-[#10141A] border border-line-1 rounded-lg px-3 py-1.5 text-xs font-mono text-ink-1 focus:border-amber-400 focus:outline-none">
+                    <option value="waveforms">Price Waveforms (₹/g)</option>
+                    <option value="spread">Basis Spread (bps)</option>
+                    <option value="zscore" selected>Rolling Z-Score (σ)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Center: Transport Buttons & Speed Multiplier (lg:col-span-4) -->
+              <div class="lg:col-span-4 flex items-center justify-center gap-2">
+                <button id="btn-replay-reset" type="button" class="surface-chip p-2 rounded-lg hover:border-amber-400 text-ink-2 hover:text-ink-1 transition-colors" title="Rewind to Beginning (Day 1)">
+                  <iconify-icon icon="lucide:rotate-ccw" class="text-base"></iconify-icon>
+                </button>
+                <button id="btn-replay-step-back" type="button" class="surface-chip p-2 rounded-lg hover:border-amber-400 text-ink-2 hover:text-ink-1 transition-colors" title="Step Back 1 Session">
+                  <iconify-icon icon="lucide:step-back" class="text-base"></iconify-icon>
+                </button>
+                <button id="btn-replay-play" type="button" class="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-bg-0 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-amber-500/20 hover:scale-105 transition-transform cursor-pointer">
+                  <iconify-icon id="replay-play-icon" icon="lucide:play" class="text-base"></iconify-icon>
+                  <span id="replay-play-label">Play</span>
+                </button>
+                <button id="btn-replay-step-fwd" type="button" class="surface-chip p-2 rounded-lg hover:border-amber-400 text-ink-2 hover:text-ink-1 transition-colors" title="Step Forward 1 Session">
+                  <iconify-icon icon="lucide:step-forward" class="text-base"></iconify-icon>
+                </button>
+                
+                <!-- Speed Buttons -->
+                <div class="flex items-center gap-1 bg-[#10141A] p-1 rounded-lg border border-line-1 ml-2" role="group" aria-label="Playback speed">
+                  <button type="button" class="replay-speed-btn px-2 py-1 text-[11px] font-mono rounded surface-chip text-ink-2 hover:text-ink-1" data-speed="1">1x</button>
+                  <button type="button" class="replay-speed-btn px-2 py-1 text-[11px] font-mono rounded bg-amber-500/20 text-amber-300 border border-amber-500/40" data-speed="2">2x</button>
+                  <button type="button" class="replay-speed-btn px-2 py-1 text-[11px] font-mono rounded surface-chip text-ink-2 hover:text-ink-1" data-speed="5">5x</button>
+                </div>
+              </div>
+
+              <!-- Right: Timeline Scrubber (lg:col-span-4) -->
+              <div class="lg:col-span-4">
+                <div class="flex items-center justify-between text-[11px] font-mono text-ink-3 mb-1">
+                  <span>Session Timeline</span>
+                  <span id="replay-scrubber-label">Day 59 / 59</span>
+                </div>
+                <div class="relative flex items-center">
+                  <input id="replay-timeline-slider" type="range" min="0" max="58" value="58" step="1" class="w-full accent-amber-400 cursor-pointer h-2 bg-bg-1 rounded-lg" aria-label="Timeline scrubber">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Primary Animated Canvas Card: High-DPI Waveform Replay -->
+          <div class="gl-card p-5 sm:p-6 space-y-3 relative overflow-hidden">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400 animate-pulse"></span>
+                <h3 id="visualizer-chart-title" class="text-base font-bold text-ink-1">
+                  Rolling Z-Score Time-Series & Continuous Particle Trajectory
+                </h3>
+              </div>
+              <div class="flex items-center gap-3 text-xs font-mono text-ink-3">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><span id="legend-label-a">GOLDM</span></span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span><span id="legend-label-b">GOLDTEN</span></span>
+                <span class="flex items-center gap-1.5 text-crimson-300"><span class="w-2.5 h-1 bg-crimson-300"></span><span>±2.0σ Threshold</span></span>
+              </div>
+            </div>
+
+            <!-- Canvas Viewport with Responsive Aspect Ratio & Hover Overlay -->
+            <div class="relative w-full rounded-xl overflow-hidden border border-line-1 bg-[#090C10] shadow-inner" style="min-height: 380px;">
+              <canvas id="replay-waveform-canvas" class="w-full block" style="height: 380px;"></canvas>
+              
+              <!-- Interactive Tooltip Overlay -->
+              <div id="replay-canvas-tooltip" class="absolute pointer-events-none opacity-0 transition-opacity duration-150 p-2.5 rounded-lg bg-[#0F1318]/95 border border-amber-500/30 text-xs font-mono shadow-xl z-20">
+                <!-- Injected dynamically on hover / step -->
+              </div>
+
+              <!-- Live Floating HUD Badge inside canvas -->
+              <div id="replay-canvas-hud" class="absolute top-3 left-3 pointer-events-none p-3 rounded-lg bg-[#0D1015]/85 border border-line-1 backdrop-blur-md text-xs font-mono space-y-1 z-10">
+                <div class="text-[11px] text-ink-3 uppercase tracking-wider font-bold">Instantaneous Vector</div>
+                <div class="flex items-center gap-2"><span class="text-ink-2">Date:</span> <span id="hud-date" class="text-amber-300 font-bold">—</span></div>
+                <div class="flex items-center gap-2"><span class="text-ink-2">Basis Spread:</span> <span id="hud-spread" class="text-emerald-400 font-bold">—</span></div>
+                <div class="flex items-center gap-2"><span class="text-ink-2">Z-Score:</span> <span id="hud-zscore" class="text-amber-400 font-bold">—</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lower Dual Grid: Phase-Space Orbit vs 4-Gate Opportunity Telemetry Radar -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Left: Dynamic Phase-Space Mean-Reversion Orbit Canvas -->
+            <div class="gl-card p-5 sm:p-6 space-y-3 relative overflow-hidden">
+              <div class="flex items-center justify-between flex-wrap gap-2 border-b border-line-1 pb-3">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="lucide:orbit" class="text-amber-400 text-xl"></iconify-icon>
+                  <div>
+                    <h3 class="text-base font-bold text-ink-1">Phase-Space Mean-Reversion Orbit</h3>
+                    <p class="text-xs text-ink-3">Trajectory of Spread (X) vs ΔSpread/Δt Velocity (Y)</p>
+                  </div>
+                </div>
+                <span id="orbit-regime-badge" class="text-xs font-mono px-2.5 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  Equilibrium Basin
+                </span>
+              </div>
+
+              <div class="relative w-full rounded-xl overflow-hidden border border-line-1 bg-[#090C10] flex items-center justify-center" style="min-height: 320px;">
+                <canvas id="replay-orbit-canvas" class="w-full block" style="height: 320px;"></canvas>
+                <div class="absolute bottom-2 left-3 text-[11px] font-mono text-ink-3 pointer-events-none">
+                  Center (0,0) = Long-Term Equilibrium Attractor
+                </div>
+              </div>
+
+              <div class="p-3 rounded-lg bg-bg-1 border border-line-1 text-xs text-ink-2 font-mono leading-relaxed">
+                <span class="text-amber-300 font-semibold">Mathematical Physics Note:</span> A stationary Ornstein-Uhlenbeck process forms closed elliptical orbits around (0,0). When dislocations widen, the orbit spirals outward into the arbitrage envelope before contracting back to center.
+              </div>
+            </div>
+
+            <!-- Right: Real-Time 4-Gate Opportunity Telemetry Radar -->
+            <div class="gl-card p-5 sm:p-6 space-y-4 relative overflow-hidden">
+              <div class="flex items-center justify-between border-b border-line-1 pb-3">
+                <div class="flex items-center gap-2">
+                  <iconify-icon icon="lucide:radar" class="text-amber-400 text-xl"></iconify-icon>
+                  <div>
+                    <h3 class="text-base font-bold text-ink-1">Real-Time 4-Gate Opportunity Radar</h3>
+                    <p class="text-xs text-ink-3">Live algorithmic filter status at current replay cursor</p>
+                  </div>
+                </div>
+                <span class="text-xs font-mono text-emerald-400 surface-chip px-2.5 py-1 rounded">
+                  4-Gate Verified
+                </span>
+              </div>
+
+              <!-- 4 Gates Status Checklist -->
+              <div class="space-y-2.5">
+                
+                <!-- Gate 1: Normalisation -->
+                <div class="p-3 rounded-lg bg-[#0F1318] border border-line-1 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-mono text-xs font-bold border border-emerald-500/40">1</span>
+                    <div>
+                      <div class="text-xs font-bold text-ink-1">Purity & Base Normalisation</div>
+                      <div class="text-[11px] text-ink-3">Standardized to ₹/g (999 fineness equivalent)</div>
+                    </div>
+                  </div>
+                  <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">PASS</span>
+                </div>
+
+                <!-- Gate 2: Liquidity Filter -->
+                <div id="gate-2-box" class="p-3 rounded-lg bg-[#0F1318] border border-line-1 flex items-center justify-between transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-mono text-xs font-bold border border-amber-500/40">2</span>
+                    <div>
+                      <div class="text-xs font-bold text-ink-1">Liquidity & Turnover Filter</div>
+                      <div id="gate-2-detail" class="text-[11px] text-ink-3">Volume: Leg A (—) | Leg B (—)</div>
+                    </div>
+                  </div>
+                  <span id="gate-2-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">PASS</span>
+                </div>
+
+                <!-- Gate 3: Cost Barrier -->
+                <div id="gate-3-box" class="p-3 rounded-lg bg-[#0F1318] border border-line-1 flex items-center justify-between transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-mono text-xs font-bold border border-amber-500/40">3</span>
+                    <div>
+                      <div class="text-xs font-bold text-ink-1">4-Leg Cost Hurdle (10.0 bps)</div>
+                      <div id="gate-3-detail" class="text-[11px] text-ink-3">Spread vs Friction hurdle</div>
+                    </div>
+                  </div>
+                  <span id="gate-3-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">SUB-HURDLE</span>
+                </div>
+
+                <!-- Gate 4: Z-Score Trigger -->
+                <div id="gate-4-box" class="p-3 rounded-lg bg-[#0F1318] border border-line-1 flex items-center justify-between transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-mono text-xs font-bold border border-amber-500/40">4</span>
+                    <div>
+                      <div class="text-xs font-bold text-ink-1">Statistical Z-Score (|z| ≥ 2.0σ)</div>
+                      <div id="gate-4-detail" class="text-[11px] text-ink-3">Zero-lookahead 20-day rolling window</div>
+                    </div>
+                  </div>
+                  <span id="gate-4-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-500/15 text-slate-300 border border-slate-500/30">NO SIGNAL</span>
+                </div>
+              </div>
+
+              <!-- Live Opportunity Verdict Card -->
+              <div id="visualizer-verdict-banner" class="p-4 rounded-xl border border-line-1 bg-[#090C10] transition-all duration-300">
+                <div class="flex items-center gap-2.5">
+                  <iconify-icon id="verdict-icon" icon="lucide:shield" class="text-xl text-ink-3"></iconify-icon>
+                  <div>
+                    <div id="verdict-title" class="text-sm font-bold text-ink-1">Within Equilibrium Noise Band</div>
+                    <div id="verdict-desc" class="text-xs text-ink-3 mt-0.5 font-mono">No trade executed. Statistical spread is inside the 2.0σ boundary.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
       </main>
 
       <!-- App Footer -->
@@ -854,7 +1098,7 @@
   <script src="https://js.puter.com/v2/"></script>
 
   <!-- Load KARAT Client Application Logic -->
-  <script src="app.js?v=3.0"></script>
+  <script src="app.js?v=4.0"></script>
 </body>
 </html>
 
