@@ -14,9 +14,17 @@
 
 ---
 
-**KARAT** solves the fundamental structural challenge in trading MCX gold futures: **the four primary contracts (GOLDM, GOLDTEN, GOLDGUINEA, GOLDPETAL) trade at different unit sizes, contract purities (995 vs 999), and lot bases.** 
+## Prototype Overview & Core Features
 
-KARAT mathematically standardises every contract to **₹ per 1 gram of 999 fineness gold**, calculates real-time calendar and cross-contract basis spreads, flags thin-liquidity regimes, enforces strict exchange physical delivery/tender period constraints, and delivers a leak-free walk-forward backtesting engine with split-sample discipline.
+KARAT is an institutional-grade quantitative commodity intelligence and relative-value analytics prototype engineered for Multi Commodity Exchange of India (MCX) Gold Futures. The platform resolves the structural fragmentation across MCX's four gold contracts—GOLDM (100g, 995 fineness), GOLDTEN (10g, 999 fineness), GOLDGUINEA (8g, 999 fineness), and GOLDPETAL (1g, 999 fineness)—by converting raw price quotes into a unified benchmark of Indian Rupees per gram of 999 pure gold.
+
+The platform delivers six core integrated modules:
+1. Purity Normalisation & Contract Chooser: Standardises heterogeneous purities and quote lot multipliers, pairing an interactive position matcher that solves target gold allocations with minimum cash drag.
+2. Statistical Spread Lab: Computes zero-lookahead 20-day rolling Z-scores, historical basis spreads, multi-expiry term structure curves, and annualized carry costs.
+3. Walk-Forward Backtest Engine: Simulates mean-reversion pairs trading subject to a realistic 4-leg transaction friction barrier (10.0 bps hurdle), liquidity slippage penalties, and strict 60/40 In-Sample versus Out-of-Sample validation.
+4. Market Replay Studio: Features an interactive 60-FPS animated graph visualizer rendering continuous particle waveforms, interactive scrubbing, and dynamic Phase-Space Mean-Reversion Orbit diagrams around an equilibrium attractor.
+5. Real-Time 4-Gate Opportunity Radar: Evaluates simultaneous normalisation, liquidity, transaction cost hurdles, and statistical thresholds before signaling trades.
+6. Regulatory Lifecycle & Audit Pipeline: Enforces MCX 5-day physical tender window roll guards and exports clean bhavcopy datasets, trade ledgers, and JSON quality verification reports.
 
 ---
 
@@ -33,7 +41,6 @@ python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000
 python -m pytest
 ```
 > **132 unit, integration, and statistical invariant tests** verify no-lookahead bias, cost monotonicity, contract lifecycle guards, and normalisation mathematical precision.
-
 
 ---
 
@@ -61,7 +68,7 @@ $$Z_t = \frac{\text{Spread}_t - \mu_{20}(t)}{\sigma_{20}(t)}$$
 
 ---
 
-##  System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
@@ -79,7 +86,7 @@ graph TD
 
 ---
 
-##  Key Modules & Endpoints
+## Key Modules & Endpoints
 
 | Endpoint | Description |
 | :--- | :--- |
@@ -94,5 +101,7 @@ graph TD
 | `GET /export/trades.csv` | Full trade-by-trade ledger CSV download |
 | `GET /export/spreads.csv` | Historical pair spreads dataset download |
 | `GET /export/normalised.csv` | Comprehensive normalised prices dataset download |
+| `GET /export/clean.csv` | Clean validated MCX Bhavcopy time-series dataset CSV |
+| `GET /export/quality.json` | Reproducible data pipeline validation and quality audit report JSON |
 
 ---
